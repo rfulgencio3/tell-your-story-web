@@ -1,10 +1,4 @@
-import {
-  type FormEvent,
-  startTransition,
-  useEffect,
-  useEffectEvent,
-  useState,
-} from 'react'
+import { type FormEvent, startTransition, useEffect, useEffectEvent, useState } from 'react'
 import {
   API_BASE_URL,
   ApiError,
@@ -24,6 +18,14 @@ import {
   submitStory,
   submitVote,
 } from './api'
+import { ActivityPanel } from './components/ActivityPanel'
+import { AuthPanel, type CreateFormState, type JoinFormState } from './components/AuthPanel'
+import { BannerStack } from './components/BannerStack'
+import { ParticipantsPanel } from './components/ParticipantsPanel'
+import { RoomPanel } from './components/RoomPanel'
+import { RoundPanel } from './components/RoundPanel'
+import { StatusPill } from './components/StatusPill'
+import { formatTimeRemaining } from './lib/format'
 import { clearSession, loadSession, saveSession } from './storage'
 import type {
   ProgressPayload,
@@ -32,19 +34,18 @@ import type {
   SessionState,
   StoryCard,
   TopStoryResult,
-  User,
   UserVote,
   VoteSummary,
 } from './types'
 
-const initialCreateForm = {
+const initialCreateForm: CreateFormState = {
   hostNickname: '',
   hostAvatarUrl: '',
   maxRounds: 3,
   timePerRound: 120,
 }
 
-const initialJoinForm = {
+const initialJoinForm: JoinFormState = {
   roomCode: '',
   nickname: '',
   avatarUrl: '',
@@ -85,6 +86,12 @@ export default function App() {
   const isHost = currentUser?.is_host ?? session?.isHost ?? false
   const hasSubmittedStory = currentRound ? submittedStoryRounds.includes(currentRound.id) : false
   const hasVoted = currentRound ? userVote?.round_id === currentRound.id : false
+  const phaseEndsIn = currentRound?.phase_ends_at
+    ? formatTimeRemaining(currentRound.phase_ends_at, now)
+    : 'Sem cronometro'
+  const currentRoundLabel = currentRound
+    ? `${currentRound.round_number}/${roomState?.room.max_rounds ?? 1} - ${currentRound.status}`
+    : roomState?.room.status ?? 'waiting'
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -105,15 +112,47 @@ export default function App() {
     clearSession()
   }, [session])
 
+  const clearGameplayPanels = useEffectEvent(() => {
+    setStoryCards([])
+    setVoteSummaries([])
+    setUserVote(null)
+    setTopStory(null)
+    setStoryProgress(null)
+    setVoteProgress(null)
+  })
+
+  const pushActivity = useEffectEvent((message: string) => {
+    const stamp = new Date().toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    startTransition(() => {
+      setActivityFeed((current) => [`${stamp} - ${message}`, ...current].slice(0, 8))
+    })
+  })
+
+  const handleApiError = useEffectEvent(
+    (error: unknown, fallbackMessage: string, clearCurrentSession = false) => {
+      if (error instanceof ApiError) {
+        if (error.status === 401 || clearCurrentSession) {
+          setSession(null)
+          setRoomState(null)
+          clearGameplayPanels()
+        }
+
+        setErrorMessage(error.message)
+        return
+      }
+
+      setErrorMessage(fallbackMessage)
+    },
+  )
+
   useEffect(() => {
     if (!session) {
       setRoomState(null)
-      setStoryCards([])
-      setVoteSummaries([])
-      setUserVote(null)
-      setTopStory(null)
-      setStoryProgress(null)
-      setVoteProgress(null)
+      clearGameplayPanels()
       setRealtimeStatus('offline')
       return
     }
@@ -134,10 +173,9 @@ export default function App() {
         })
       })
       .catch((error: unknown) => {
-        if (cancelled) {
-          return
+        if (!cancelled) {
+          handleApiError(error, 'Nao foi possivel restaurar a sala.', true)
         }
-        handleApiError(error, 'Nao foi possivel restaurar a sala.', true)
       })
       .finally(() => {
         if (!cancelled) {
@@ -149,17 +187,6 @@ export default function App() {
       cancelled = true
     }
   }, [session?.roomCode, session?.user_id, session?.session_token])
-
-  const pushActivity = useEffectEvent((message: string) => {
-    const stamp = new Date().toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-
-    startTransition(() => {
-      setActivityFeed((current) => [`${stamp} - ${message}`, ...current].slice(0, 8))
-    })
-  })
 
   const handleRealtimeEvent = useEffectEvent((event: RealtimeEnvelope) => {
     switch (event.type) {
@@ -268,13 +295,12 @@ export default function App() {
 
     void Promise.all([listStories(currentRound.id), listVotes(currentRound.id)])
       .then(([stories, votes]) => {
-        if (cancelled) {
-          return
+        if (!cancelled) {
+          startTransition(() => {
+            setStoryCards(stories)
+            setVoteSummaries(votes)
+          })
         }
-        startTransition(() => {
-          setStoryCards(stories)
-          setVoteSummaries(votes)
-        })
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -304,23 +330,45 @@ export default function App() {
     }
   }, [currentRound?.id, currentRound?.status, session?.user_id, session?.session_token])
 
-  function resetFeedback() {
-    setErrorMessage(null)
-    setNotice(null)
-  }
-
-  function handleApiError(error: unknown, fallbackMessage: string, clearCurrentSession = false) {
-    if (error instanceof ApiError) {
-      if (error.status === 401 || clearCurrentSession) {
-        setSession(null)
-        setRoomState(null)
-      }
-
-      setErrorMessage(error.message)
+  useEffect(() => {
+    if (!currentRound || currentRound.status !== 'revealed' || topStory) {
       return
     }
 
-    setErrorMessage(fallbackMessage)
+    let cancelled = false
+    void getTopStory(currentRound.id)
+      .then((winner) => {
+        if (!cancelled) {
+          setTopStory(winner)
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          handleApiError(error, 'Nao foi possivel carregar a historia vencedora.')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentRound?.id, currentRound?.status, topStory?.story.id])
+
+  useEffect(() => {
+    if (!roomState) {
+      return
+    }
+
+    if (roomState.room.status === 'finished') {
+      setNotice('A partida terminou.')
+    }
+    if (roomState.room.status === 'expired') {
+      setErrorMessage('A sala expirou.')
+    }
+  }, [roomState?.room.status])
+
+  function resetFeedback() {
+    setErrorMessage(null)
+    setNotice(null)
   }
 
   async function onCreateRoom(event: FormEvent<HTMLFormElement>) {
@@ -494,10 +542,19 @@ export default function App() {
     }
   }
 
-  const phaseEndsIn = currentRound?.phase_ends_at
-    ? formatTimeRemaining(currentRound.phase_ends_at, now)
-    : 'Sem cronometro'
-  const storyVoteMap = Object.fromEntries(voteSummaries.map((vote) => [vote.story_id, vote.vote_count]))
+  async function copyRoomCode() {
+    if (!roomState?.room.code || !navigator.clipboard) {
+      setNotice(`Codigo da sala: ${roomState?.room.code ?? ''}`)
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(roomState.room.code)
+      setNotice(`Codigo ${roomState.room.code} copiado.`)
+    } catch {
+      setNotice(`Codigo da sala: ${roomState.room.code}`)
+    }
+  }
 
   return (
     <main className="page-shell">
@@ -515,335 +572,67 @@ export default function App() {
         </div>
       </header>
 
-      {(errorMessage || notice) && (
-        <section className="banner-stack">
-          {errorMessage ? <div className="banner error">{errorMessage}</div> : null}
-          {notice ? <div className="banner success">{notice}</div> : null}
-        </section>
-      )}
+      <BannerStack errorMessage={errorMessage} notice={notice} />
 
       <section className="layout-grid">
-        <aside className="panel auth-panel">
-          <div className="panel-header">
-            <span>Entrada</span>
-            <strong>Criar ou entrar em uma sala</strong>
-          </div>
-
-          <form className="stack-form" onSubmit={onCreateRoom}>
-            <h2>Criar sala</h2>
-            <label>
-              <span>Seu nome</span>
-              <input
-                value={createForm.hostNickname}
-                onChange={(event) => setCreateForm((current) => ({ ...current, hostNickname: event.target.value }))}
-                placeholder="Ricardo"
-                required
-              />
-            </label>
-            <label>
-              <span>Avatar URL</span>
-              <input
-                value={createForm.hostAvatarUrl}
-                onChange={(event) => setCreateForm((current) => ({ ...current, hostAvatarUrl: event.target.value }))}
-                placeholder="https://..."
-              />
-            </label>
-            <div className="inline-fields">
-              <label>
-                <span>Rodadas</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={5}
-                  value={createForm.maxRounds}
-                  onChange={(event) => setCreateForm((current) => ({ ...current, maxRounds: Number(event.target.value) }))}
-                />
-              </label>
-              <label>
-                <span>Tempo (s)</span>
-                <input
-                  type="number"
-                  min={60}
-                  max={300}
-                  value={createForm.timePerRound}
-                  onChange={(event) => setCreateForm((current) => ({ ...current, timePerRound: Number(event.target.value) }))}
-                />
-              </label>
-            </div>
-            <button type="submit" disabled={busyAction === 'create-room'}>
-              {busyAction === 'create-room' ? 'Criando...' : 'Criar sala'}
-            </button>
-          </form>
-
-          <form className="stack-form muted-form" onSubmit={onJoinRoom}>
-            <h2>Entrar em sala</h2>
-            <label>
-              <span>Codigo da sala</span>
-              <input
-                value={joinForm.roomCode}
-                onChange={(event) => setJoinForm((current) => ({ ...current, roomCode: event.target.value.toUpperCase() }))}
-                placeholder="ABCD12"
-                required
-              />
-            </label>
-            <label>
-              <span>Seu nome</span>
-              <input
-                value={joinForm.nickname}
-                onChange={(event) => setJoinForm((current) => ({ ...current, nickname: event.target.value }))}
-                placeholder="Ana"
-                required
-              />
-            </label>
-            <label>
-              <span>Avatar URL</span>
-              <input
-                value={joinForm.avatarUrl}
-                onChange={(event) => setJoinForm((current) => ({ ...current, avatarUrl: event.target.value }))}
-                placeholder="https://..."
-              />
-            </label>
-            <button type="submit" className="secondary" disabled={busyAction === 'join-room'}>
-              {busyAction === 'join-room' ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
-        </aside>
+        <AuthPanel
+          createForm={createForm}
+          joinForm={joinForm}
+          busyAction={busyAction}
+          onCreateRoom={onCreateRoom}
+          onJoinRoom={onJoinRoom}
+          onCreateFormChange={(field, value) => {
+            setCreateForm((current) => ({ ...current, [field]: value }))
+          }}
+          onJoinFormChange={(field, value) => {
+            setJoinForm((current) => ({ ...current, [field]: value }))
+          }}
+        />
 
         <section className="workspace">
-          <article className="panel room-panel">
-            <div className="panel-header">
-              <span>Sala atual</span>
-              <strong>{roomState ? roomState.room.code : 'Nenhuma sessao ativa'}</strong>
-            </div>
-
-            {session && roomState ? (
-              <>
-                <div className="room-overview">
-                  <div>
-                    <p className="metric-label">Jogador</p>
-                    <strong>{currentUser?.nickname ?? session.nickname}</strong>
-                  </div>
-                  <div>
-                    <p className="metric-label">Status</p>
-                    <strong>{roomState.room.status}</strong>
-                  </div>
-                  <div>
-                    <p className="metric-label">Rodada</p>
-                    <strong>
-                      {currentRound ? `${currentRound.round_number}/${roomState.room.max_rounds}` : 'Ainda nao iniciou'}
-                    </strong>
-                  </div>
-                  <div>
-                    <p className="metric-label">Fase encerra em</p>
-                    <strong>{phaseEndsIn}</strong>
-                  </div>
-                </div>
-
-                <div className="action-row">
-                  <button type="button" onClick={() => void runRoomAction('refresh')} disabled={busyAction === 'refresh'}>
-                    Atualizar
-                  </button>
-                  {isHost && (roomState.room.status === 'waiting' || roomState.room.status === 'paused') ? (
-                    <button type="button" onClick={() => void runRoomAction('start')} disabled={busyAction === 'start'}>
-                      {roomState.room.status === 'paused' ? 'Retomar rodada' : 'Iniciar jogo'}
-                    </button>
-                  ) : null}
-                  {isHost && roomState.room.status === 'active' ? (
-                    <button type="button" onClick={() => void runRoomAction('pause')} disabled={busyAction === 'pause'}>
-                      Pausar
-                    </button>
-                  ) : null}
-                  {isHost && currentRound ? (
-                    <button type="button" className="secondary" onClick={() => void runRoomAction('advance')} disabled={busyAction === 'advance'}>
-                      Avancar fase
-                    </button>
-                  ) : null}
-                  {isHost && currentRound?.status === 'revealed' ? (
-                    <button type="button" className="secondary" onClick={() => void runRoomAction('reveal')} disabled={busyAction === 'reveal'}>
-                      Revelar vencedora
-                    </button>
-                  ) : null}
-                  <button type="button" className="ghost" onClick={() => void runRoomAction('leave')} disabled={busyAction === 'leave'}>
-                    Sair da sala
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="empty-state">
-                <strong>Crie ou entre em uma sala para iniciar o jogo.</strong>
-                <p>Assim que uma sessao for criada, o frontend salva user_id e session_token localmente.</p>
-              </div>
-            )}
-          </article>
+          <RoomPanel
+            session={session}
+            roomState={roomState}
+            currentUser={currentUser}
+            currentRoundNumberLabel={currentRoundLabel}
+            phaseEndsIn={phaseEndsIn}
+            isHost={isHost}
+            busyAction={busyAction}
+            onRefresh={() => void runRoomAction('refresh')}
+            onStart={() => void runRoomAction('start')}
+            onPause={() => void runRoomAction('pause')}
+            onAdvance={() => void runRoomAction('advance')}
+            onReveal={() => void runRoomAction('reveal')}
+            onLeave={() => void runRoomAction('leave')}
+            onCopyCode={() => void copyRoomCode()}
+          />
 
           <div className="workspace-grid">
-            <article className="panel players-panel">
-              <div className="panel-header">
-                <span>Participantes</span>
-                <strong>{roomState?.users.length ?? 0} conectados</strong>
-              </div>
-              <div className="user-list">
-                {roomState?.users.map((user) => (
-                  <UserCard key={user.id} user={user} isCurrentUser={user.id === session?.user_id} />
-                ))}
-              </div>
-            </article>
-
-            <article className="panel round-panel">
-              <div className="panel-header">
-                <span>Rodada atual</span>
-                <strong>{currentRound ? currentRound.status : 'waiting'}</strong>
-              </div>
-
-              {currentRound ? (
-                <>
-                  <div className="progress-grid">
-                    <ProgressCard
-                      label="Historias enviadas"
-                      value={`${storyProgress?.count ?? storyCards.length}/${roomState?.users.length ?? 0}`}
-                    />
-                    <ProgressCard
-                      label="Votos registrados"
-                      value={`${voteProgress?.count ?? voteSummaries.reduce((sum, vote) => sum + vote.vote_count, 0)}/${Math.max((roomState?.users.length ?? 1) - 1, 1)}`}
-                    />
-                  </div>
-
-                  {currentRound.status === 'writing' ? (
-                    <form className="stack-form" onSubmit={onSubmitStory}>
-                      <h2>Envie sua historia</h2>
-                      <label>
-                        <span>Titulo</span>
-                        <input
-                          value={storyForm.title}
-                          onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))}
-                          placeholder="Aquele dia improvavel"
-                          required
-                        />
-                      </label>
-                      <label>
-                        <span>Historia</span>
-                        <textarea
-                          value={storyForm.body}
-                          onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))}
-                          placeholder="Conte uma historia curta e memoravel..."
-                          rows={5}
-                          required
-                        />
-                      </label>
-                      <button type="submit" disabled={busyAction === 'submit-story' || hasSubmittedStory || roomState?.room.status !== 'active'}>
-                        {hasSubmittedStory ? 'Historia ja enviada' : busyAction === 'submit-story' ? 'Enviando...' : 'Enviar historia'}
-                      </button>
-                    </form>
-                  ) : (
-                    <div className="story-list">
-                      {storyCards.length === 0 ? (
-                        <div className="empty-state compact">
-                          <strong>As historias ainda nao chegaram aqui.</strong>
-                          <p>Use Atualizar ou aguarde o realtime sincronizar o painel.</p>
-                        </div>
-                      ) : null}
-
-                      {storyCards.map((story) => {
-                        const isSelected = userVote?.story_id === story.id
-                        const voteCount = storyVoteMap[story.id] ?? story.vote_count
-                        return (
-                          <article key={story.id} className={`story-card${isSelected ? ' selected' : ''}`}>
-                            <div className="story-card-header">
-                              <strong>{story.title}</strong>
-                              <span>{voteCount} voto(s)</span>
-                            </div>
-                            <p>{story.body}</p>
-                            {currentRound.status === 'voting' ? (
-                              <button
-                                type="button"
-                                className="secondary"
-                                disabled={hasVoted || busyAction === `vote-${story.id}`}
-                                onClick={() => void onVote(story.id)}
-                              >
-                                {isSelected ? 'Seu voto' : hasVoted ? 'Votacao encerrada para voce' : 'Votar nesta historia'}
-                              </button>
-                            ) : null}
-                          </article>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  {topStory ? (
-                    <div className="winner-card">
-                      <span>Vencedora</span>
-                      <strong>{topStory.story.title}</strong>
-                      <p>{topStory.story.body}</p>
-                      <small>
-                        por {topStory.author.nickname} com {topStory.vote_count} voto(s)
-                      </small>
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <div className="empty-state compact">
-                  <strong>O host ainda nao iniciou a primeira rodada.</strong>
-                  <p>Quando a sala sair de waiting, a escrita abre automaticamente.</p>
-                </div>
-              )}
-            </article>
+            <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />
+            <RoundPanel
+              roomState={roomState}
+              currentRoundLabel={currentRoundLabel}
+              storyProgress={storyProgress}
+              voteProgress={voteProgress}
+              storyCards={storyCards}
+              voteSummaries={voteSummaries}
+              userVote={userVote}
+              topStory={topStory}
+              storyForm={storyForm}
+              busyAction={busyAction}
+              hasSubmittedStory={hasSubmittedStory}
+              hasVoted={hasVoted}
+              onStoryFormChange={(field, value) => {
+                setStoryForm((current) => ({ ...current, [field]: value }))
+              }}
+              onSubmitStory={onSubmitStory}
+              onVote={(storyId) => void onVote(storyId)}
+            />
           </div>
 
-          <article className="panel feed-panel">
-            <div className="panel-header">
-              <span>Atividade</span>
-              <strong>Ultimos eventos</strong>
-            </div>
-            <ul className="activity-list">
-              {activityFeed.length === 0 ? <li>Nenhum evento realtime recebido ainda.</li> : null}
-              {activityFeed.map((entry) => (
-                <li key={entry}>{entry}</li>
-              ))}
-            </ul>
-          </article>
+          <ActivityPanel items={activityFeed} />
         </section>
       </section>
     </main>
   )
-}
-
-function StatusPill({ label, tone }: { label: string; tone: 'neutral' | 'success' | 'warning' }) {
-  return <span className={`status-pill ${tone}`}>{label}</span>
-}
-
-function UserCard({ user, isCurrentUser }: { user: User; isCurrentUser: boolean }) {
-  return (
-    <article className={`user-card${isCurrentUser ? ' current' : ''}`}>
-      <div>
-        <strong>{user.nickname}</strong>
-        <p>{user.is_host ? 'Host' : 'Participante'}</p>
-      </div>
-      {isCurrentUser ? <span>Voce</span> : null}
-    </article>
-  )
-}
-
-function ProgressCard({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="progress-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
-  )
-}
-
-function formatTimeRemaining(targetDate: string, now: number) {
-  const diffMs = new Date(targetDate).getTime() - now
-  if (Number.isNaN(diffMs)) {
-    return 'Sem dado'
-  }
-  if (diffMs <= 0) {
-    return '00:00'
-  }
-
-  const totalSeconds = Math.floor(diffMs / 1000)
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0')
-  const seconds = String(totalSeconds % 60).padStart(2, '0')
-
-  return `${minutes}:${seconds}`
 }
