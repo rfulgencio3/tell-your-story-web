@@ -9,6 +9,8 @@ import type {
 } from '../types'
 
 type RealtimeStatus = 'offline' | 'connecting' | 'connected' | 'reconnecting'
+const maxInitialReconnectAttempts = 5
+const maxReconnectAttempts = 10
 
 interface UseRealtimeParams {
   session: SessionState | null
@@ -32,6 +34,7 @@ export function useRealtime({
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('offline')
   const reconnectTimerRef = useRef<number | null>(null)
   const reconnectAttemptRef = useRef(0)
+  const hasConnectedRef = useRef(false)
 
   const handleRealtimeEvent = useEffectEvent((event: RealtimeEnvelope) => {
     switch (event.type) {
@@ -82,6 +85,7 @@ export function useRealtime({
         reconnectTimerRef.current = null
       }
       reconnectAttemptRef.current = 0
+      hasConnectedRef.current = false
       setRealtimeStatus('offline')
       return
     }
@@ -96,6 +100,7 @@ export function useRealtime({
       socket = new WebSocket(getRealtimeUrl(session))
 
       socket.onopen = () => {
+        hasConnectedRef.current = true
         reconnectAttemptRef.current = 0
         setRealtimeStatus('connected')
 
@@ -128,9 +133,19 @@ export function useRealtime({
 
         reconnectAttemptRef.current += 1
         const attempt = reconnectAttemptRef.current
+        const maxAttempts = hasConnectedRef.current ? maxReconnectAttempts : maxInitialReconnectAttempts
+        if (attempt >= maxAttempts) {
+          setRealtimeStatus('offline')
+          onActivity('Realtime indisponivel no momento.')
+          onError('Nao foi possivel conectar ao canal realtime. Recarregue a pagina ou tente entrar na sala novamente.')
+          return
+        }
+
         const delay = Math.min(1000 * attempt, 5000)
         setRealtimeStatus('reconnecting')
-        onActivity(`Realtime desconectado. Tentando reconectar em ${Math.ceil(delay / 1000)}s.`)
+        if (attempt === 1 || attempt === maxAttempts-1) {
+          onActivity(`Realtime desconectado. Tentando reconectar em ${Math.ceil(delay / 1000)}s.`)
+        }
 
         reconnectTimerRef.current = window.setTimeout(() => {
           reconnectTimerRef.current = null
@@ -144,6 +159,7 @@ export function useRealtime({
     return () => {
       disposed = true
       reconnectAttemptRef.current = 0
+      hasConnectedRef.current = false
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current)
         reconnectTimerRef.current = null

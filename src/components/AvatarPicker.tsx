@@ -1,4 +1,4 @@
-import { avatarOptions } from '../lib/avatar-options'
+import { avatarOptions, normalizeAvatarUrl } from '../lib/avatar-options'
 
 interface AvatarPickerProps {
   selectedAvatarUrl: string
@@ -22,7 +22,7 @@ export function AvatarPicker({
 
       <div className="avatar-picker-grid" role="list" aria-label={title}>
         {avatarOptions.map((avatar) => {
-          const selected = avatar.imageUrl === selectedAvatarUrl
+          const selected = normalizeAvatarUrl(avatar.imageUrl) === normalizeAvatarUrl(selectedAvatarUrl)
 
           return (
             <button
@@ -32,7 +32,7 @@ export function AvatarPicker({
               aria-pressed={selected}
               onClick={() => onSelect(avatar.imageUrl)}
             >
-              <img src={avatar.imageUrl} alt={avatar.name} />
+              <img src={normalizeAvatarUrl(avatar.imageUrl)} alt={avatar.name} />
               <span>{avatar.name}</span>
             </button>
           )

@@ -1,4 +1,5 @@
 import type { User } from '../types'
+import { normalizeAvatarUrl } from '../lib/avatar-options'
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -23,7 +24,11 @@ export function ParticipantsPanel({
         {users.map((user) => (
           <article key={user.id} className={`player-orb-card${user.id === currentUserId ? ' current' : ''}`}>
             <div className={`player-orb${user.is_host ? ' host' : ''}`}>
-              {user.avatar_url ? <img src={user.avatar_url} alt={user.nickname} /> : <span>{initialsFromName(user.nickname)}</span>}
+              {user.avatar_url ? (
+                <img src={normalizeAvatarUrl(user.avatar_url)} alt={user.nickname} />
+              ) : (
+                <span>{initialsFromName(user.nickname)}</span>
+              )}
             </div>
             <div className="player-orb-copy">
               <strong>{user.nickname}</strong>

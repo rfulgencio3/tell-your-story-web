@@ -4,10 +4,17 @@ export interface AvatarOption {
   imageUrl: string
 }
 
+const jaguarAvatarPath = '/avatars/03-jaguar.png'
+const jaguarAvatarVersion = 'v=2'
+
+function withVersion(path: string, version: string) {
+  return `${path}?${version}`
+}
+
 export const avatarOptions: AvatarOption[] = [
   { id: 'fox', name: 'Raposa', imageUrl: '/avatars/01-fox.png' },
   { id: 'chicken', name: 'Galinha', imageUrl: '/avatars/02-chicken.png' },
-  { id: 'jaguar', name: 'Onca', imageUrl: '/avatars/03-jaguar.png' },
+  { id: 'jaguar', name: 'Onca', imageUrl: withVersion(jaguarAvatarPath, jaguarAvatarVersion) },
   { id: 'capybara', name: 'Capivara', imageUrl: '/avatars/04-capybara.png' },
   { id: 'dog', name: 'Cachorro', imageUrl: '/avatars/05-dog.png' },
   { id: 'cat', name: 'Gato', imageUrl: '/avatars/06-cat.png' },
@@ -28,3 +35,12 @@ export const avatarOptions: AvatarOption[] = [
 ]
 
 export const defaultAvatarUrl = avatarOptions[0]?.imageUrl ?? ''
+
+export function normalizeAvatarUrl(avatarUrl: string) {
+  const trimmed = avatarUrl.trim()
+  if (trimmed === '' || !trimmed.startsWith(jaguarAvatarPath)) {
+    return trimmed
+  }
+
+  return withVersion(jaguarAvatarPath, jaguarAvatarVersion)
+}

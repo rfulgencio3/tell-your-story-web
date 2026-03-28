@@ -32,7 +32,7 @@ import { useActivityFeed } from './hooks/useActivityFeed'
 import { usePersistentSession } from './hooks/usePersistentSession'
 import { useRealtime } from './hooks/useRealtime'
 import { useRoundData } from './hooks/useRoundData'
-import { defaultAvatarUrl } from './lib/avatar-options'
+import { defaultAvatarUrl, normalizeAvatarUrl } from './lib/avatar-options'
 import { formatTimeRemaining } from './lib/format'
 import type { RoomState } from './types'
 
@@ -669,7 +669,7 @@ export default function App() {
         <div className="sidebar-room-card">
           <div className="sidebar-avatar">
             {currentUser?.avatar_url ? (
-              <img src={currentUser.avatar_url} alt={currentUser.nickname} />
+              <img src={normalizeAvatarUrl(currentUser.avatar_url)} alt={currentUser.nickname} />
             ) : (
               <span>{(currentUser?.nickname ?? session?.nickname ?? 'TS').slice(0, 2).toUpperCase()}</span>
             )}
