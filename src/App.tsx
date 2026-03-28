@@ -134,6 +134,15 @@ export default function App() {
   const currentRoundLabel = currentRound
     ? `${currentRound.round_number}/${roomState?.room.max_rounds ?? 1} - ${currentRound.status}`
     : roomState?.room.status ?? 'waiting'
+  const surfaceNotice =
+    notice ??
+    (busyAction === 'restore-room' && session && !roomState
+      ? 'Restaurando sessao local...'
+      : realtimeStatus === 'reconnecting' && session
+        ? 'Tentando reconectar o canal realtime...'
+        : realtimeStatus === 'connecting' && session
+          ? 'Conectando canal realtime...'
+          : null)
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -186,11 +195,16 @@ export default function App() {
     }
 
     if (roomState.room.status === 'finished') {
-      setNotice('A partida terminou.')
+      setNotice('A partida terminou. Voce pode iniciar uma nova sala ou entrar em outra.')
     }
 
     if (roomState.room.status === 'expired') {
       setErrorMessage('A sala expirou.')
+      setNotice('Sua sessao local foi encerrada. Use o codigo da sala para entrar novamente.')
+      setJoinForm((current) => ({ ...current, roomCode: roomState.room.code }))
+      clearAllRoundState()
+      setSession(null)
+      setRoomState(null)
     }
   }, [roomState?.room.status])
 
@@ -396,12 +410,18 @@ export default function App() {
           <StatusPill label={`API ${API_BASE_URL}`} tone="neutral" />
           <StatusPill
             label={`Realtime ${realtimeStatus}`}
-            tone={realtimeStatus === 'connected' ? 'success' : 'warning'}
+            tone={
+              realtimeStatus === 'connected'
+                ? 'success'
+                : realtimeStatus === 'offline' && !session
+                  ? 'neutral'
+                  : 'warning'
+            }
           />
         </div>
       </header>
 
-      <BannerStack errorMessage={errorMessage} notice={notice} />
+      <BannerStack errorMessage={errorMessage} notice={surfaceNotice} />
 
       <section className="layout-grid">
         <AuthPanel

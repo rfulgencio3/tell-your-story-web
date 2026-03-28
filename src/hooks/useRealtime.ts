@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { getRealtimeUrl } from '../api'
 import type {
   ProgressPayload,
@@ -8,7 +8,7 @@ import type {
   TopStoryResult,
 } from '../types'
 
-type RealtimeStatus = 'offline' | 'connecting' | 'connected'
+type RealtimeStatus = 'offline' | 'connecting' | 'connected' | 'reconnecting'
 
 interface UseRealtimeParams {
   session: SessionState | null
@@ -30,6 +30,8 @@ export function useRealtime({
   onActivity,
 }: UseRealtimeParams) {
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('offline')
+  const reconnectTimerRef = useRef<number | null>(null)
+  const reconnectAttemptRef = useRef(0)
 
   const handleRealtimeEvent = useEffectEvent((event: RealtimeEnvelope) => {
     switch (event.type) {
@@ -75,38 +77,78 @@ export function useRealtime({
 
   useEffect(() => {
     if (!session) {
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
+      reconnectAttemptRef.current = 0
       setRealtimeStatus('offline')
       return
     }
 
-    setRealtimeStatus('connecting')
-    const socket = new WebSocket(getRealtimeUrl(session))
+    let socket: WebSocket | null = null
+    let disposed = false
 
-    socket.onopen = () => {
-      setRealtimeStatus('connected')
-      socket.send(JSON.stringify({ type: 'room.sync' }))
-      socket.send(JSON.stringify({ type: 'story.progress.request' }))
-      socket.send(JSON.stringify({ type: 'vote.progress.request' }))
-    }
+    const connect = () => {
+      const isReconnect = reconnectAttemptRef.current > 0
+      setRealtimeStatus(isReconnect ? 'reconnecting' : 'connecting')
 
-    socket.onmessage = (message) => {
-      try {
-        handleRealtimeEvent(JSON.parse(message.data) as RealtimeEnvelope)
-      } catch {
-        onError('Falha ao processar evento realtime.')
+      socket = new WebSocket(getRealtimeUrl(session))
+
+      socket.onopen = () => {
+        reconnectAttemptRef.current = 0
+        setRealtimeStatus('connected')
+
+        if (isReconnect) {
+          onActivity('Canal realtime reconectado.')
+        }
+
+        socket?.send(JSON.stringify({ type: 'room.sync' }))
+        socket?.send(JSON.stringify({ type: 'story.progress.request' }))
+        socket?.send(JSON.stringify({ type: 'vote.progress.request' }))
+      }
+
+      socket.onmessage = (message) => {
+        try {
+          handleRealtimeEvent(JSON.parse(message.data) as RealtimeEnvelope)
+        } catch {
+          onError('Falha ao processar evento realtime.')
+        }
+      }
+
+      socket.onerror = () => {
+        socket?.close()
+      }
+
+      socket.onclose = () => {
+        if (disposed) {
+          setRealtimeStatus('offline')
+          return
+        }
+
+        reconnectAttemptRef.current += 1
+        const attempt = reconnectAttemptRef.current
+        const delay = Math.min(1000 * attempt, 5000)
+        setRealtimeStatus('reconnecting')
+        onActivity(`Realtime desconectado. Tentando reconectar em ${Math.ceil(delay / 1000)}s.`)
+
+        reconnectTimerRef.current = window.setTimeout(() => {
+          reconnectTimerRef.current = null
+          connect()
+        }, delay)
       }
     }
 
-    socket.onerror = () => {
-      setRealtimeStatus('offline')
-    }
-
-    socket.onclose = () => {
-      setRealtimeStatus('offline')
-    }
+    connect()
 
     return () => {
-      socket.close()
+      disposed = true
+      reconnectAttemptRef.current = 0
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = null
+      }
+      socket?.close()
     }
   }, [session?.roomCode, session?.user_id, session?.session_token])
 

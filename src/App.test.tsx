@@ -340,4 +340,24 @@ describe('App', () => {
     expect(screen.getAllByText('A montanha').length).toBeGreaterThan(0)
     expect(screen.getByText('por Ana com 2 voto(s)')).toBeInTheDocument()
   })
+
+  it('limpa a sessao local quando a sala expira', async () => {
+    loadSessionMock.mockReturnValue(buildSession())
+    getRoomMock.mockResolvedValue(
+      buildRoomState({
+        room: {
+          ...buildRoomState().room,
+          status: 'expired',
+        },
+      }),
+    )
+
+    render(<App />)
+
+    expect(await screen.findByText('A sala expirou.')).toBeInTheDocument()
+    expect(screen.getByText('Sua sessao local foi encerrada. Use o codigo da sala para entrar novamente.')).toBeInTheDocument()
+    expect(screen.getByText('Nenhuma sessao ativa')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('ABCD12')).toBeInTheDocument()
+    expect(clearSessionMock).toHaveBeenCalled()
+  })
 })
