@@ -216,6 +216,9 @@ describe('App', () => {
       })
     })
 
+    expect(await screen.findByText('Seu codigo randomico ja esta pronto.')).toBeInTheDocument()
+    const shareDialog = screen.getByRole('dialog', { name: 'Seu codigo randomico ja esta pronto.' })
+    expect(within(shareDialog).getByRole('button', { name: 'Copiar codigo' })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Iniciar jogo' })).toBeInTheDocument()
     expect(saveSessionMock).toHaveBeenCalled()
   })
@@ -224,6 +227,8 @@ describe('App', () => {
     joinRoomMock.mockResolvedValue(buildAuthenticatedRoomState())
 
     render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar em sala' }))
 
     const joinForm = screen.getByRole('heading', { name: 'Entrar em sala' }).closest('form')
     if (!joinForm) {
@@ -360,6 +365,7 @@ describe('App', () => {
     expect(await screen.findByText('A sala expirou.')).toBeInTheDocument()
     expect(screen.getByText('Sua sessao local foi encerrada. Use o codigo da sala para entrar novamente.')).toBeInTheDocument()
     expect(screen.getByText('Nenhuma sessao ativa')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar em sala' })).toHaveClass('active')
     expect(screen.getByDisplayValue('ABCD12')).toBeInTheDocument()
     expect(clearSessionMock).toHaveBeenCalled()
   })

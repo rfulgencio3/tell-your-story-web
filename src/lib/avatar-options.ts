@@ -17,7 +17,14 @@ export const avatarOptions: AvatarOption[] = [
   { id: 'shark', name: 'Tubarao', imageUrl: '/avatars/10-shark.png' },
   { id: 'bee', name: 'Abelha', imageUrl: '/avatars/11-bee.png' },
   { id: 'frog', name: 'Sapo', imageUrl: '/avatars/12-frog.png' },
+  { id: 'elephant', name: 'Elefante', imageUrl: '/avatars/13-elephant.png' },
   { id: 'owl', name: 'Coruja', imageUrl: '/avatars/14-own.png' },
+  { id: 'panda', name: 'Panda', imageUrl: '/avatars/15-panda.png' },
+  { id: 'sloth', name: 'Bicho-preguica', imageUrl: '/avatars/16-sloth.png' },
+  { id: 'bear', name: 'Urso', imageUrl: '/avatars/17-bear.png' },
+  { id: 'penguin', name: 'Pinguim', imageUrl: '/avatars/18-penguin.png' },
+  { id: 'monkey', name: 'Macaco', imageUrl: '/avatars/19-monkey.png' },
+  { id: 'crocodile', name: 'Crocodilo', imageUrl: '/avatars/20-crocodile.png' },
 ]
 
 export const defaultAvatarUrl = avatarOptions[0]?.imageUrl ?? ''

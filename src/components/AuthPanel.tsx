@@ -1,6 +1,8 @@
 import type { FormEvent } from 'react'
 import { AvatarPicker } from './AvatarPicker'
 
+export type EntryMode = 'create' | 'join'
+
 export interface CreateFormState {
   hostNickname: string
   hostAvatarUrl: string
@@ -15,9 +17,12 @@ export interface JoinFormState {
 }
 
 interface AuthPanelProps {
+  activeMode: EntryMode
   createForm: CreateFormState
   joinForm: JoinFormState
   busyAction: string | null
+  roomCodePreview: string
+  onModeChange: (mode: EntryMode) => void
   onCreateRoom: (event: FormEvent<HTMLFormElement>) => void
   onJoinRoom: (event: FormEvent<HTMLFormElement>) => void
   onCreateFormChange: (field: keyof CreateFormState, value: string | number) => void
@@ -25,9 +30,12 @@ interface AuthPanelProps {
 }
 
 export function AuthPanel({
+  activeMode,
   createForm,
   joinForm,
   busyAction,
+  roomCodePreview,
+  onModeChange,
   onCreateRoom,
   onJoinRoom,
   onCreateFormChange,
@@ -41,11 +49,34 @@ export function AuthPanel({
         <p>Crie uma sala para receber o grupo ou entre com um codigo existente.</p>
       </div>
 
+      <div className="entry-mode-toggle" role="tablist" aria-label="Escolha de entrada">
+        <button
+          type="button"
+          className={activeMode === 'create' ? 'active' : ''}
+          onClick={() => onModeChange('create')}
+        >
+          Criar sala
+        </button>
+        <button
+          type="button"
+          className={activeMode === 'join' ? 'active' : ''}
+          onClick={() => onModeChange('join')}
+        >
+          Entrar em sala
+        </button>
+      </div>
+
       <div className="entry-forms-grid">
+        {activeMode === 'create' ? (
         <form className="stack-form entry-form-block" onSubmit={onCreateRoom}>
           <div className="entry-form-title">
             <h2>Criar sala</h2>
             <span>Host</span>
+          </div>
+          <div className="room-code-preview">
+            <span>Codigo randomico</span>
+            <strong>{roomCodePreview}</strong>
+            <p>O codigo e gerado automaticamente no momento da criacao.</p>
           </div>
           <label>
             <span>Seu nome</span>
@@ -88,7 +119,7 @@ export function AuthPanel({
             {busyAction === 'create-room' ? 'Criando...' : 'Criar sala'}
           </button>
         </form>
-
+        ) : (
         <form className="stack-form entry-form-block entry-form-muted" onSubmit={onJoinRoom}>
           <div className="entry-form-title">
             <h2>Entrar em sala</h2>
@@ -122,6 +153,7 @@ export function AuthPanel({
             {busyAction === 'join-room' ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+        )}
       </div>
     </aside>
   )

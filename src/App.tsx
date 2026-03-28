@@ -16,7 +16,12 @@ import {
   submitVote,
 } from './api'
 import { ActivityPanel } from './components/ActivityPanel'
-import { AuthPanel, type CreateFormState, type JoinFormState } from './components/AuthPanel'
+import {
+  AuthPanel,
+  type CreateFormState,
+  type EntryMode,
+  type JoinFormState,
+} from './components/AuthPanel'
 import { BannerStack } from './components/BannerStack'
 import { ParticipantsPanel } from './components/ParticipantsPanel'
 import { RoomPanel } from './components/RoomPanel'
@@ -49,12 +54,23 @@ const initialStoryForm = {
   body: '',
 }
 
+function generateRoomCodePreview() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const digits = '23456789'
+  const pick = (alphabet: string) => alphabet[Math.floor(Math.random() * alphabet.length)] ?? alphabet[0] ?? ''
+
+  return `${pick(letters)}${pick(letters)}${pick(letters)}${pick(letters)}${pick(digits)}${pick(digits)}`
+}
+
 export default function App() {
   const [session, setSession] = usePersistentSession()
   const [roomState, setRoomState] = useState<RoomState | null>(null)
+  const [entryMode, setEntryMode] = useState<EntryMode>('create')
   const [createForm, setCreateForm] = useState(initialCreateForm)
   const [joinForm, setJoinForm] = useState(initialJoinForm)
   const [storyForm, setStoryForm] = useState(initialStoryForm)
+  const [roomCodePreview, setRoomCodePreview] = useState(() => generateRoomCodePreview())
+  const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -182,6 +198,18 @@ export default function App() {
         : realtimeStatus === 'connecting' && session
           ? 'Conectando canal realtime...'
           : null)
+  const isPageBusy = busyAction !== null
+  const shareLink = createdRoomCode
+    ? (() => {
+        if (typeof window === 'undefined') {
+          return `/?room=${createdRoomCode}`
+        }
+
+        const url = new URL(window.location.href)
+        url.searchParams.set('room', createdRoomCode)
+        return url.toString()
+      })()
+    : ''
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -191,6 +219,23 @@ export default function App() {
     return () => {
       window.clearInterval(interval)
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const roomCode = window.location.search ? new URLSearchParams(window.location.search).get('room') : null
+    if (!roomCode) {
+      return
+    }
+
+    setEntryMode('join')
+    setJoinForm((current) => ({
+      ...current,
+      roomCode: roomCode.toUpperCase(),
+    }))
   }, [])
 
   useEffect(() => {
@@ -240,6 +285,7 @@ export default function App() {
     if (roomState.room.status === 'expired') {
       setErrorMessage('A sala expirou.')
       setNotice('Sua sessao local foi encerrada. Use o codigo da sala para entrar novamente.')
+      setEntryMode('join')
       setJoinForm((current) => ({ ...current, roomCode: roomState.room.code }))
       clearAllRoundState()
       setSession(null)
@@ -268,8 +314,10 @@ export default function App() {
       clearAllRoundState()
       setSession(sessionFromRoomState(state))
       setRoomState(state)
+      setCreatedRoomCode(state.room.code)
       setJoinForm((current) => ({ ...current, roomCode: state.room.code }))
       setCreateForm(initialCreateForm)
+      setRoomCodePreview(generateRoomCodePreview())
       setNotice(`Sala ${state.room.code} criada. Compartilhe o codigo com o grupo.`)
       pushActivity('Sala criada e sessao autenticada.')
     } catch (error: unknown) {
@@ -438,11 +486,36 @@ export default function App() {
     }
   }
 
+  async function copyInviteLink() {
+    if (!createdRoomCode) {
+      return
+    }
+
+    if (!navigator.clipboard) {
+      setNotice(`Link da sala: ${shareLink}`)
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      setNotice('Link de convite copiado.')
+    } catch {
+      setNotice(`Link da sala: ${shareLink}`)
+    }
+  }
+
   if (!hasLiveRoom) {
     return (
       <main className="entry-page">
         <div className="entry-gradient" />
         <div className="entry-dots" />
+        {isPageBusy ? (
+          <div className="page-loader" role="status" aria-live="polite">
+            <div className="page-loader-spinner" />
+            <strong>Processando sua jogada...</strong>
+            <span>Preparando sala, sessao e reconexao.</span>
+          </div>
+        ) : null}
 
         <section className="entry-shell">
           <header className="entry-branding">
@@ -498,9 +571,17 @@ export default function App() {
             </div>
 
             <AuthPanel
+              activeMode={entryMode}
               createForm={createForm}
               joinForm={joinForm}
               busyAction={busyAction}
+              roomCodePreview={roomCodePreview}
+              onModeChange={(mode) => {
+                setEntryMode(mode)
+                if (mode === 'create') {
+                  setRoomCodePreview(generateRoomCodePreview())
+                }
+              }}
               onCreateRoom={onCreateRoom}
               onJoinRoom={onJoinRoom}
               onCreateFormChange={(field, value) => {
@@ -524,6 +605,39 @@ export default function App() {
 
   return (
     <main className="game-page">
+      {isPageBusy ? (
+        <div className="page-loader" role="status" aria-live="polite">
+          <div className="page-loader-spinner" />
+          <strong>Processando sua jogada...</strong>
+          <span>Sincronizando sala, sessao e rodada.</span>
+        </div>
+      ) : null}
+
+      {createdRoomCode ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-room-title">
+            <span className="eyebrow">Sala criada</span>
+            <h2 id="share-room-title">Seu codigo randomico ja esta pronto.</h2>
+            <p>Compartilhe o codigo ou envie o link direto para o grupo entrar na mesma sala.</p>
+            <div className="share-modal-code">
+              <span>Codigo da sala</span>
+              <strong>{createdRoomCode}</strong>
+            </div>
+            <div className="share-modal-actions">
+              <button type="button" onClick={() => void copyRoomCode()}>
+                Copiar codigo
+              </button>
+              <button type="button" className="secondary" onClick={() => void copyInviteLink()}>
+                Copiar link
+              </button>
+            </div>
+            <button type="button" className="ghost share-modal-dismiss" onClick={() => setCreatedRoomCode(null)}>
+              Continuar para a sala
+            </button>
+          </section>
+        </div>
+      ) : null}
+
       <header className="game-topbar">
         <div className="game-topbar-brand">
           <img className="game-topbar-logo" src={officialLogo} alt="Tell Your Story" />
