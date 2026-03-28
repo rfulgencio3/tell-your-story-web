@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useEffectEvent, useState } from 'react'
 import {
-  API_BASE_URL,
   ApiError,
   createRoom,
   getRoom,
@@ -26,7 +25,6 @@ import { BannerStack } from './components/BannerStack'
 import { ParticipantsPanel } from './components/ParticipantsPanel'
 import { RoomPanel } from './components/RoomPanel'
 import { RoundPanel } from './components/RoundPanel'
-import { StatusPill } from './components/StatusPill'
 import officialLogo from './assets/official-logo.png'
 import { useActivityFeed } from './hooks/useActivityFeed'
 import { usePersistentSession } from './hooks/usePersistentSession'
@@ -54,12 +52,20 @@ const initialStoryForm = {
   body: '',
 }
 
-function generateRoomCodePreview() {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
-  const digits = '23456789'
-  const pick = (alphabet: string) => alphabet[Math.floor(Math.random() * alphabet.length)] ?? alphabet[0] ?? ''
+function formatRoundLabel(roundState: RoomState | null) {
+  const currentRound = roundState?.current_round
+  if (!currentRound) {
+    return 'Aguardando inicio'
+  }
 
-  return `${pick(letters)}${pick(letters)}${pick(letters)}${pick(letters)}${pick(digits)}${pick(digits)}`
+  const phaseLabel =
+    currentRound.status === 'writing'
+      ? 'Escrita'
+      : currentRound.status === 'voting'
+        ? 'Votacao'
+        : 'Revelacao'
+
+  return `Rodada ${currentRound.round_number} - ${phaseLabel}`
 }
 
 export default function App() {
@@ -69,7 +75,6 @@ export default function App() {
   const [createForm, setCreateForm] = useState(initialCreateForm)
   const [joinForm, setJoinForm] = useState(initialJoinForm)
   const [storyForm, setStoryForm] = useState(initialStoryForm)
-  const [roomCodePreview, setRoomCodePreview] = useState(() => generateRoomCodePreview())
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -149,9 +154,7 @@ export default function App() {
   const phaseEndsIn = currentRound?.phase_ends_at
     ? formatTimeRemaining(currentRound.phase_ends_at, now)
     : 'Sem cronometro'
-  const currentRoundLabel = currentRound
-    ? `${currentRound.round_number}/${roomState?.room.max_rounds ?? 1} - ${currentRound.status}`
-    : roomState?.room.status ?? 'waiting'
+  const currentRoundLabel = formatRoundLabel(roomState)
   const hasLiveRoom = Boolean(session && roomState)
   const heroLabel =
     roomState?.room.status === 'waiting'
@@ -193,8 +196,8 @@ export default function App() {
     notice ??
     (busyAction === 'restore-room' && session && !roomState
       ? 'Restaurando sessao local...'
-      : realtimeStatus === 'reconnecting' && session
-        ? 'Tentando reconectar o canal realtime...'
+        : realtimeStatus === 'reconnecting' && session
+          ? 'Tentando reconectar o canal realtime...'
         : realtimeStatus === 'connecting' && session
           ? 'Conectando canal realtime...'
           : null)
@@ -317,7 +320,6 @@ export default function App() {
       setCreatedRoomCode(state.room.code)
       setJoinForm((current) => ({ ...current, roomCode: state.room.code }))
       setCreateForm(initialCreateForm)
-      setRoomCodePreview(generateRoomCodePreview())
       setNotice(`Sala ${state.room.code} criada. Compartilhe o codigo com o grupo.`)
       pushActivity('Sala criada e sessao autenticada.')
     } catch (error: unknown) {
@@ -525,9 +527,7 @@ export default function App() {
             <div className="entry-copy">
               <p className="eyebrow">Kinetic Narrative</p>
               <h1>Junte seu grupo e coloque a melhor historia na roda.</h1>
-              <p>
-                Sala, cronometro, rodada e reveal sincronizados com backend Go em tempo real.
-              </p>
+              <p>Crie a sala, convide seus amigos e acompanhe cada rodada ao vivo.</p>
             </div>
           </header>
 
@@ -575,12 +575,8 @@ export default function App() {
               createForm={createForm}
               joinForm={joinForm}
               busyAction={busyAction}
-              roomCodePreview={roomCodePreview}
               onModeChange={(mode) => {
                 setEntryMode(mode)
-                if (mode === 'create') {
-                  setRoomCodePreview(generateRoomCodePreview())
-                }
               }}
               onCreateRoom={onCreateRoom}
               onJoinRoom={onJoinRoom}
@@ -592,12 +588,6 @@ export default function App() {
               }}
             />
           </section>
-
-          <footer className="entry-footer">
-            <span>Nenhuma sessao ativa</span>
-            <span>API {API_BASE_URL}</span>
-            <span>Realtime {realtimeStatus}</span>
-          </footer>
         </section>
       </main>
     )
@@ -617,7 +607,7 @@ export default function App() {
         <div className="modal-backdrop" role="presentation">
           <section className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-room-title">
             <span className="eyebrow">Sala criada</span>
-            <h2 id="share-room-title">Seu codigo randomico ja esta pronto.</h2>
+            <h2 id="share-room-title">Seu codigo da sala ja esta pronto.</h2>
             <p>Compartilhe o codigo ou envie o link direto para o grupo entrar na mesma sala.</p>
             <div className="share-modal-code">
               <span>Codigo da sala</span>
@@ -642,26 +632,11 @@ export default function App() {
         <div className="game-topbar-brand">
           <img className="game-topbar-logo" src={officialLogo} alt="Tell Your Story" />
         </div>
-        <nav className="game-topbar-nav">
-          <span className={roomState?.room.status === 'waiting' ? 'active' : ''}>Lobby</span>
-          <span className={roomState?.room.status !== 'waiting' ? 'active' : ''}>Game</span>
-          <span>Players</span>
-        </nav>
         <div className="game-topbar-meta">
           <div className="room-code-chip">
             <span>Room Code</span>
             <strong>{roomState?.room.code}</strong>
           </div>
-          <StatusPill
-            label={`Realtime ${realtimeStatus}`}
-            tone={
-              realtimeStatus === 'connected'
-                ? 'success'
-                : realtimeStatus === 'offline' && !session
-                  ? 'neutral'
-                  : 'warning'
-            }
-          />
         </div>
       </header>
 
@@ -683,10 +658,9 @@ export default function App() {
             Lobby
           </button>
           <button type="button" className={roomState?.room.status !== 'waiting' ? 'active' : ''}>
-            Game
+            Rodada
           </button>
           <button type="button">Players</button>
-          <button type="button">Settings</button>
         </nav>
 
         <button type="button" className="sidebar-cta" onClick={() => void copyRoomCode()}>

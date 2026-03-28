@@ -17,6 +17,23 @@ interface RoomPanelProps {
   onCopyCode: () => void
 }
 
+function formatRoomStatus(status: string) {
+  switch (status) {
+    case 'waiting':
+      return 'Aguardando jogadores'
+    case 'active':
+      return 'Em andamento'
+    case 'paused':
+      return 'Pausada'
+    case 'finished':
+      return 'Encerrada'
+    case 'expired':
+      return 'Expirada'
+    default:
+      return status
+  }
+}
+
 export function RoomPanel({
   session,
   roomState,
@@ -87,8 +104,8 @@ export function RoomPanel({
               <strong>{currentUser?.nickname ?? session.nickname}</strong>
             </div>
             <div>
-              <p className="metric-label">Status</p>
-              <strong>{roomState.room.status}</strong>
+              <p className="metric-label">Sala</p>
+              <strong>{formatRoomStatus(roomState.room.status)}</strong>
             </div>
             <div>
               <p className="metric-label">Rodada</p>
@@ -141,7 +158,7 @@ export function RoomPanel({
       ) : (
         <div className="empty-state">
           <strong>Crie ou entre em uma sala para iniciar o jogo.</strong>
-          <p>Assim que uma sessao for criada, o frontend salva user_id e session_token localmente.</p>
+          <p>Assim que a sala estiver pronta, voce recebe o codigo para compartilhar com o grupo.</p>
         </div>
       )}
     </article>
