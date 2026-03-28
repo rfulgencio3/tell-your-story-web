@@ -461,6 +461,7 @@ export default function App() {
             <RoundPanel
               roomState={roomState}
               currentRoundLabel={currentRoundLabel}
+              isHost={isHost}
               storyProgress={storyProgress}
               voteProgress={voteProgress}
               storyCards={storyCards}

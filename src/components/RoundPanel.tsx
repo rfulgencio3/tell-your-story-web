@@ -4,6 +4,7 @@ import type { ProgressPayload, RoomState, StoryCard, TopStoryResult, UserVote, V
 interface RoundPanelProps {
   roomState: RoomState | null
   currentRoundLabel: string
+  isHost: boolean
   storyProgress: ProgressPayload | null
   voteProgress: ProgressPayload | null
   storyCards: StoryCard[]
@@ -22,6 +23,7 @@ interface RoundPanelProps {
 export function RoundPanel({
   roomState,
   currentRoundLabel,
+  isHost,
   storyProgress,
   voteProgress,
   storyCards,
@@ -38,12 +40,64 @@ export function RoundPanel({
 }: RoundPanelProps) {
   const currentRound = roomState?.current_round ?? null
   const storyVoteMap = Object.fromEntries(voteSummaries.map((vote) => [vote.story_id, vote.vote_count]))
+  const roomStatus = roomState?.room.status ?? 'waiting'
+  const phaseTone =
+    roomStatus === 'paused' || roomStatus === 'expired'
+      ? 'warning'
+      : currentRound?.status === 'revealed'
+        ? 'success'
+        : 'neutral'
+  const phaseTitle =
+    roomStatus === 'waiting'
+      ? 'Aguardando inicio da partida'
+      : roomStatus === 'paused'
+        ? 'Rodada pausada'
+        : roomStatus === 'finished'
+          ? 'Partida encerrada'
+          : roomStatus === 'expired'
+            ? 'Sala expirada'
+            : currentRound?.status === 'writing'
+              ? 'Fase de escrita'
+              : currentRound?.status === 'voting'
+                ? 'Fase de votacao'
+                : currentRound?.status === 'revealed'
+                  ? 'Resultado revelado'
+                  : 'Sala sincronizada'
+  const phaseDescription =
+    roomStatus === 'waiting'
+      ? isHost
+        ? 'Assim que estiver tudo pronto, inicie o jogo para abrir a escrita.'
+        : 'O host ainda nao iniciou a partida.'
+      : roomStatus === 'paused'
+        ? isHost
+          ? 'Retome a rodada quando o grupo estiver pronto para continuar.'
+          : 'A rodada foi pausada pelo host.'
+        : roomStatus === 'finished'
+          ? 'A partida terminou e nao ha mais rodadas a jogar nesta sala.'
+          : roomStatus === 'expired'
+            ? 'Esta sessao nao aceita mais acoes. Entre em outra sala para continuar.'
+            : currentRound?.status === 'writing'
+              ? hasSubmittedStory
+                ? 'Sua historia ja foi enviada. Aguarde o restante do grupo ou a proxima fase.'
+                : 'Envie sua historia antes do tempo acabar.'
+              : currentRound?.status === 'voting'
+                ? hasVoted
+                  ? 'Seu voto ja foi registrado. Aguarde o reveal da rodada.'
+                  : 'Vote em uma historia. O autor permanece oculto ate o reveal.'
+                : currentRound?.status === 'revealed'
+                  ? 'A rodada foi concluida. Confira o resultado antes da proxima fase.'
+                  : 'A sala esta pronta para sincronizar a rodada.'
 
   return (
     <article className="panel round-panel">
       <div className="panel-header">
         <span>Rodada atual</span>
         <strong>{currentRoundLabel}</strong>
+      </div>
+
+      <div className={`phase-callout ${phaseTone}`}>
+        <span>{phaseTitle}</span>
+        <p>{phaseDescription}</p>
       </div>
 
       {currentRound ? (

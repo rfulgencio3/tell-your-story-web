@@ -33,6 +33,45 @@ export function RoomPanel({
   onLeave,
   onCopyCode,
 }: RoomPanelProps) {
+  const roomStatus = roomState?.room.status ?? 'waiting'
+  const roundStatus = roomState?.current_round?.status ?? null
+  const actionLabel =
+    roundStatus === 'writing'
+      ? 'Avancar para votacao'
+      : roundStatus === 'voting'
+        ? 'Avancar para revelacao'
+        : roundStatus === 'revealed'
+          ? 'Avancar para proxima rodada'
+          : 'Avancar fase'
+
+  const guidanceTitle = isHost ? 'Painel do host' : 'Painel do participante'
+  const guidanceText =
+    roomStatus === 'waiting'
+      ? isHost
+        ? 'Compartilhe o codigo da sala e inicie o jogo quando o grupo estiver pronto.'
+        : 'Aguarde o host iniciar a primeira rodada.'
+      : roomStatus === 'paused'
+        ? isHost
+          ? 'A rodada esta pausada. Retome quando quiser continuar a dinamica.'
+          : 'A rodada foi pausada pelo host. Aguarde a retomada.'
+        : roomStatus === 'finished'
+          ? 'A partida terminou. Voce pode criar uma nova sala para jogar de novo.'
+          : roomStatus === 'expired'
+            ? 'A sala expirou. Entre novamente com um codigo valido.'
+            : roundStatus === 'writing'
+              ? isHost
+                ? 'Acompanhe o progresso das historias e avance para votacao quando fizer sentido.'
+                : 'Escreva e envie sua historia antes do encerramento da fase.'
+              : roundStatus === 'voting'
+                ? isHost
+                  ? 'Observe a contagem de votos e avance para revelacao quando o grupo terminar.'
+                  : 'Escolha uma historia para votar antes do fim do tempo.'
+                : roundStatus === 'revealed'
+                  ? isHost
+                    ? 'Confira a vencedora e avance para a proxima rodada quando quiser.'
+                    : 'Confira a historia vencedora e aguarde a proxima rodada.'
+                  : 'A sala esta sincronizada e pronta para continuar.'
+
   return (
     <article className="panel room-panel">
       <div className="panel-header">
@@ -61,6 +100,12 @@ export function RoomPanel({
             </div>
           </div>
 
+          <div className="context-callout">
+            <span>{guidanceTitle}</span>
+            <strong>{isHost ? 'Voce controla o fluxo da rodada.' : 'Voce acompanha o fluxo definido pelo host.'}</strong>
+            <p>{guidanceText}</p>
+          </div>
+
           <div className="action-row">
             <button type="button" onClick={onRefresh} disabled={busyAction === 'refresh'}>
               Atualizar
@@ -80,7 +125,7 @@ export function RoomPanel({
             ) : null}
             {isHost && roomState.current_round ? (
               <button type="button" className="secondary" onClick={onAdvance} disabled={busyAction === 'advance'}>
-                Avancar fase
+                {actionLabel}
               </button>
             ) : null}
             {isHost && roomState.current_round?.status === 'revealed' ? (
