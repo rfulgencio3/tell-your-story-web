@@ -312,8 +312,9 @@ img {
 
 .rule-card {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 4px;
   align-items: start;
   padding: 14px 16px;
   border-radius: 20px;
@@ -334,6 +335,8 @@ img {
   color: #1d1f2d;
   background: linear-gradient(135deg, #98f5b7, #fff1ae);
   border: 2px solid rgba(29, 31, 45, 0.14);
+  grid-row: 1 / span 2;
+  align-self: start;
 }
 
 .rule-card strong {
@@ -341,9 +344,11 @@ img {
   font-size: 0.98rem;
   line-height: 1.18;
   color: var(--ink);
+  margin: 2px 0 0;
 }
 
 .rule-card p {
+  grid-column: 2;
   margin: 5px 0 0;
   font-size: 0.92rem;
   line-height: 1.45;
