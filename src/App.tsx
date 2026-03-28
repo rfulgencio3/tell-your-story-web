@@ -69,6 +69,7 @@ function formatRoundLabel(roundState: RoomState | null) {
 }
 
 export default function App() {
+  const currentYear = new Date().getFullYear()
   const [session, setSession] = usePersistentSession()
   const [roomState, setRoomState] = useState<RoomState | null>(null)
   const [entryMode, setEntryMode] = useState<EntryMode>('create')
@@ -213,6 +214,22 @@ export default function App() {
         return url.toString()
       })()
     : ''
+  const appFooter = (
+    <footer className="app-footer">
+      <span>Feito em {currentYear} por</span>
+      <a
+        href="https://github.com/rfulgencio3"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="GitHub de rfulgencio3"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.59 2 12.24c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.49 0-.24-.01-1.05-.01-1.9-2.78.62-3.37-1.21-3.37-1.21-.46-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.09 0-1.13.39-2.06 1.03-2.79-.1-.26-.45-1.31.1-2.73 0 0 .85-.28 2.8 1.07A9.4 9.4 0 0 1 12 6.84c.85 0 1.71.12 2.51.36 1.95-1.35 2.8-1.07 2.8-1.07.56 1.42.21 2.47.1 2.73.64.73 1.03 1.66 1.03 2.79 0 3.96-2.33 4.82-4.56 5.08.36.32.68.95.68 1.92 0 1.39-.01 2.5-.01 2.84 0 .28.18.6.69.49A10.25 10.25 0 0 0 22 12.24C22 6.59 17.52 2 12 2Z" />
+        </svg>
+        <strong>rfulgencio3</strong>
+      </a>
+    </footer>
+  )
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -596,6 +613,8 @@ export default function App() {
               </aside>
             </div>
           </section>
+
+          {appFooter}
         </section>
       </main>
     )
@@ -754,6 +773,8 @@ export default function App() {
             ) : null}
           </aside>
         </section>
+
+        {appFooter}
       </section>
     </main>
   )

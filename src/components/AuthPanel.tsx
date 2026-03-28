@@ -72,11 +72,11 @@ export function AuthPanel({
               <span>Host</span>
             </div>
             <label>
-              <span>Seu nome</span>
+              <span>Nickname</span>
               <input
                 value={createForm.hostNickname}
                 onChange={(event) => onCreateFormChange('hostNickname', event.target.value)}
-                placeholder="Ricardo"
+                placeholder="NickName"
                 required
               />
             </label>
@@ -128,11 +128,11 @@ export function AuthPanel({
               />
             </label>
             <label>
-              <span>Seu nome</span>
+              <span>Nickname</span>
               <input
                 value={joinForm.nickname}
                 onChange={(event) => onJoinFormChange('nickname', event.target.value)}
-                placeholder="Ana"
+                placeholder="NickName"
                 required
               />
             </label>

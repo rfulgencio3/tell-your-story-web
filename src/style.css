@@ -152,6 +152,43 @@ img {
   gap: 22px;
 }
 
+.app-footer {
+  width: min(1120px, 100%);
+  margin: 18px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
+}
+
+.app-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  opacity: 0.9;
+}
+
+.app-footer svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.game-canvas > .app-footer {
+  width: 100%;
+  color: rgba(29, 31, 45, 0.72);
+  justify-content: flex-end;
+  padding-bottom: 8px;
+}
+
 .entry-feature-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -789,8 +826,8 @@ img {
 .avatar-choice {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 8px 6px;
+  gap: 8px;
+  padding: 12px 8px 10px;
   border-radius: 20px;
   border: 2px solid rgba(112, 42, 225, 0.16);
   background: #ffffff;
@@ -801,14 +838,14 @@ img {
 }
 
 .avatar-choice img {
-  width: 54px;
-  height: 54px;
+  width: 68px;
+  height: 68px;
   border-radius: 999px;
   object-fit: cover;
 }
 
 .avatar-choice span {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   font-weight: 700;
 }
 
