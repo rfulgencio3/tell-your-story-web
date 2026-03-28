@@ -1,15 +1,12 @@
-import { type FormEvent, startTransition, useEffect, useEffectEvent, useState } from 'react'
+import { type FormEvent, useEffect, useEffectEvent, useState } from 'react'
 import {
   API_BASE_URL,
   ApiError,
   createRoom,
-  getRealtimeUrl,
   getRoom,
   getTopStory,
-  getUserVote,
   joinRoom,
   leaveRoom,
-  listStories,
   listVotes,
   nextRound,
   pauseRoom,
@@ -25,18 +22,12 @@ import { ParticipantsPanel } from './components/ParticipantsPanel'
 import { RoomPanel } from './components/RoomPanel'
 import { RoundPanel } from './components/RoundPanel'
 import { StatusPill } from './components/StatusPill'
+import { useActivityFeed } from './hooks/useActivityFeed'
+import { usePersistentSession } from './hooks/usePersistentSession'
+import { useRealtime } from './hooks/useRealtime'
+import { useRoundData } from './hooks/useRoundData'
 import { formatTimeRemaining } from './lib/format'
-import { clearSession, loadSession, saveSession } from './storage'
-import type {
-  ProgressPayload,
-  RealtimeEnvelope,
-  RoomState,
-  SessionState,
-  StoryCard,
-  TopStoryResult,
-  UserVote,
-  VoteSummary,
-} from './types'
+import type { RoomState } from './types'
 
 const initialCreateForm: CreateFormState = {
   hostNickname: '',
@@ -56,29 +47,80 @@ const initialStoryForm = {
   body: '',
 }
 
-type RealtimeStatus = 'offline' | 'connecting' | 'connected'
-
 export default function App() {
-  const [session, setSession] = useState<SessionState | null>(() => loadSession())
+  const [session, setSession] = usePersistentSession()
   const [roomState, setRoomState] = useState<RoomState | null>(null)
-  const [storyCards, setStoryCards] = useState<StoryCard[]>([])
-  const [voteSummaries, setVoteSummaries] = useState<VoteSummary[]>([])
-  const [userVote, setUserVote] = useState<UserVote | null>(null)
-  const [topStory, setTopStory] = useState<TopStoryResult | null>(null)
-  const [storyProgress, setStoryProgress] = useState<ProgressPayload | null>(null)
-  const [voteProgress, setVoteProgress] = useState<ProgressPayload | null>(null)
-  const [activityFeed, setActivityFeed] = useState<string[]>([])
   const [createForm, setCreateForm] = useState(initialCreateForm)
   const [joinForm, setJoinForm] = useState(initialJoinForm)
   const [storyForm, setStoryForm] = useState(initialStoryForm)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('offline')
   const [now, setNow] = useState(() => Date.now())
-  const [submittedStoryRounds, setSubmittedStoryRounds] = useState<string[]>([])
 
+  const { activityFeed, pushActivity } = useActivityFeed()
   const currentRound = roomState?.current_round ?? null
+  const handleApiError = useEffectEvent(
+    (error: unknown, fallbackMessage: string, clearCurrentSession = false) => {
+      if (error instanceof ApiError) {
+        if (error.status === 401 || clearCurrentSession) {
+          setSession(null)
+          setRoomState(null)
+        }
+
+        setErrorMessage(error.message)
+        return
+      }
+
+      setErrorMessage(fallbackMessage)
+    },
+  )
+
+  const {
+    storyCards,
+    voteSummaries,
+    userVote,
+    topStory,
+    storyProgress,
+    voteProgress,
+    submittedStoryRounds,
+    setUserVote,
+    setTopStory,
+    setStoryProgress,
+    setVoteProgress,
+    setVoteSummaries,
+    clearAllRoundState,
+    markStorySubmitted,
+  } = useRoundData({
+    session,
+    currentRound,
+    onApiError: (error, fallbackMessage) => {
+      handleApiError(error, fallbackMessage)
+    },
+  })
+
+  const realtimeStatus = useRealtime({
+    session,
+    onRoomState: (state) => {
+      setRoomState(state)
+    },
+    onStoryProgress: (payload) => {
+      setStoryProgress(payload)
+    },
+    onVoteProgress: (payload) => {
+      setVoteProgress(payload)
+    },
+    onTopStory: (winner) => {
+      setTopStory(winner)
+    },
+    onError: (message) => {
+      setErrorMessage(message)
+    },
+    onActivity: (message) => {
+      pushActivity(message)
+    },
+  })
+
   const currentUser =
     roomState && session
       ? roomState.users.find((user) => user.id === session.user_id) ?? null
@@ -104,56 +146,8 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (session) {
-      saveSession(session)
-      return
-    }
-
-    clearSession()
-  }, [session])
-
-  const clearGameplayPanels = useEffectEvent(() => {
-    setStoryCards([])
-    setVoteSummaries([])
-    setUserVote(null)
-    setTopStory(null)
-    setStoryProgress(null)
-    setVoteProgress(null)
-  })
-
-  const pushActivity = useEffectEvent((message: string) => {
-    const stamp = new Date().toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-
-    startTransition(() => {
-      setActivityFeed((current) => [`${stamp} - ${message}`, ...current].slice(0, 8))
-    })
-  })
-
-  const handleApiError = useEffectEvent(
-    (error: unknown, fallbackMessage: string, clearCurrentSession = false) => {
-      if (error instanceof ApiError) {
-        if (error.status === 401 || clearCurrentSession) {
-          setSession(null)
-          setRoomState(null)
-          clearGameplayPanels()
-        }
-
-        setErrorMessage(error.message)
-        return
-      }
-
-      setErrorMessage(fallbackMessage)
-    },
-  )
-
-  useEffect(() => {
     if (!session) {
       setRoomState(null)
-      clearGameplayPanels()
-      setRealtimeStatus('offline')
       return
     }
 
@@ -166,11 +160,9 @@ export default function App() {
           return
         }
 
-        startTransition(() => {
-          setRoomState(state)
-          setErrorMessage(null)
-          setNotice('Sessao restaurada com sucesso.')
-        })
+        setRoomState(state)
+        setErrorMessage(null)
+        setNotice('Sessao restaurada com sucesso.')
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -188,171 +180,6 @@ export default function App() {
     }
   }, [session?.roomCode, session?.user_id, session?.session_token])
 
-  const handleRealtimeEvent = useEffectEvent((event: RealtimeEnvelope) => {
-    switch (event.type) {
-      case 'room.state':
-        startTransition(() => {
-          setRoomState(event.data as RoomState)
-        })
-        break
-      case 'story.progress':
-        startTransition(() => {
-          setStoryProgress(event.data as ProgressPayload)
-        })
-        break
-      case 'vote.progress':
-        startTransition(() => {
-          setVoteProgress(event.data as ProgressPayload)
-        })
-        break
-      case 'round.revealed':
-        startTransition(() => {
-          setTopStory(event.data as TopStoryResult)
-        })
-        pushActivity('A historia vencedora foi revelada.')
-        break
-      case 'presence.joined': {
-        const payload = event.data as { nickname?: string }
-        pushActivity(`${payload.nickname ?? 'Alguem'} entrou na sala.`)
-        break
-      }
-      case 'presence.left': {
-        const payload = event.data as { nickname?: string }
-        pushActivity(`${payload.nickname ?? 'Alguem'} saiu da sala.`)
-        break
-      }
-      case 'connection.ready':
-        pushActivity('Canal realtime conectado.')
-        break
-      case 'room.expired':
-        pushActivity('A sala expirou.')
-        setErrorMessage('A sala expirou.')
-        break
-      case 'error': {
-        const payload = event.data as { message?: string }
-        setErrorMessage(payload.message ?? 'Falha no canal realtime.')
-        break
-      }
-      default:
-        break
-    }
-  })
-
-  useEffect(() => {
-    if (!session) {
-      return
-    }
-
-    setRealtimeStatus('connecting')
-    const socket = new WebSocket(getRealtimeUrl(session))
-
-    socket.onopen = () => {
-      setRealtimeStatus('connected')
-      socket.send(JSON.stringify({ type: 'room.sync' }))
-      socket.send(JSON.stringify({ type: 'story.progress.request' }))
-      socket.send(JSON.stringify({ type: 'vote.progress.request' }))
-    }
-
-    socket.onmessage = (message) => {
-      try {
-        handleRealtimeEvent(JSON.parse(message.data) as RealtimeEnvelope)
-      } catch {
-        setErrorMessage('Falha ao processar evento realtime.')
-      }
-    }
-
-    socket.onerror = () => {
-      setRealtimeStatus('offline')
-    }
-
-    socket.onclose = () => {
-      setRealtimeStatus('offline')
-    }
-
-    return () => {
-      socket.close()
-    }
-  }, [session?.roomCode, session?.user_id, session?.session_token])
-
-  useEffect(() => {
-    if (!session || !currentRound) {
-      setStoryCards([])
-      setVoteSummaries([])
-      setUserVote(null)
-      setTopStory(null)
-      return
-    }
-
-    if (currentRound.status === 'writing') {
-      setStoryCards([])
-      setVoteSummaries([])
-      setUserVote(null)
-      setTopStory(null)
-      return
-    }
-
-    let cancelled = false
-
-    void Promise.all([listStories(currentRound.id), listVotes(currentRound.id)])
-      .then(([stories, votes]) => {
-        if (!cancelled) {
-          startTransition(() => {
-            setStoryCards(stories)
-            setVoteSummaries(votes)
-          })
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          handleApiError(error, 'Nao foi possivel carregar historias e votos.')
-        }
-      })
-
-    void getUserVote(currentRound.id, session)
-      .then((vote) => {
-        if (!cancelled) {
-          setUserVote(vote)
-        }
-      })
-      .catch((error: unknown) => {
-        if (cancelled) {
-          return
-        }
-        if (error instanceof ApiError && error.status === 404) {
-          setUserVote(null)
-          return
-        }
-        handleApiError(error, 'Nao foi possivel carregar seu voto.')
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [currentRound?.id, currentRound?.status, session?.user_id, session?.session_token])
-
-  useEffect(() => {
-    if (!currentRound || currentRound.status !== 'revealed' || topStory) {
-      return
-    }
-
-    let cancelled = false
-    void getTopStory(currentRound.id)
-      .then((winner) => {
-        if (!cancelled) {
-          setTopStory(winner)
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          handleApiError(error, 'Nao foi possivel carregar a historia vencedora.')
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [currentRound?.id, currentRound?.status, topStory?.story.id])
-
   useEffect(() => {
     if (!roomState) {
       return
@@ -361,6 +188,7 @@ export default function App() {
     if (roomState.room.status === 'finished') {
       setNotice('A partida terminou.')
     }
+
     if (roomState.room.status === 'expired') {
       setErrorMessage('A sala expirou.')
     }
@@ -383,8 +211,9 @@ export default function App() {
         max_rounds: createForm.maxRounds,
         time_per_round: createForm.timePerRound,
       })
-      const nextSession = sessionFromRoomState(state)
-      setSession(nextSession)
+
+      clearAllRoundState()
+      setSession(sessionFromRoomState(state))
       setRoomState(state)
       setJoinForm((current) => ({ ...current, roomCode: state.room.code }))
       setCreateForm(initialCreateForm)
@@ -407,8 +236,9 @@ export default function App() {
         nickname: joinForm.nickname,
         avatar_url: joinForm.avatarUrl,
       })
-      const nextSession = sessionFromRoomState(state)
-      setSession(nextSession)
+
+      clearAllRoundState()
+      setSession(sessionFromRoomState(state))
       setRoomState(state)
       setJoinForm(initialJoinForm)
       setNotice(`Voce entrou na sala ${state.room.code}.`)
@@ -439,6 +269,7 @@ export default function App() {
       if (action === 'leave') {
         await leaveRoom(session)
         setSession(null)
+        setRoomState(null)
         setNotice('Voce saiu da sala.')
         return
       }
@@ -493,18 +324,16 @@ export default function App() {
         title: storyForm.title,
         body: storyForm.body,
       })
-      setSubmittedStoryRounds((current) =>
-        current.includes(currentRound.id) ? current : [...current, currentRound.id],
-      )
+
+      markStorySubmitted(currentRound.id)
       setStoryForm(initialStoryForm)
       setNotice('Historia enviada com sucesso.')
       pushActivity('Sua historia foi enviada.')
     } catch (error: unknown) {
       if (error instanceof ApiError && error.code === 'story_already_submitted') {
-        setSubmittedStoryRounds((current) =>
-          current.includes(currentRound.id) ? current : [...current, currentRound.id],
-        )
+        markStorySubmitted(currentRound.id)
       }
+
       handleApiError(error, 'Nao foi possivel enviar a historia.')
     } finally {
       setBusyAction(null)
@@ -526,13 +355,13 @@ export default function App() {
         session_token: session.session_token,
         story_id: storyId,
       })
+
       setUserVote({
         round_id: currentRound.id,
         story_id: storyId,
         user_id: session.user_id,
       })
-      const votes = await listVotes(currentRound.id)
-      setVoteSummaries(votes)
+      setVoteSummaries(await listVotes(currentRound.id))
       setNotice('Voto registrado com sucesso.')
       pushActivity('Seu voto foi enviado.')
     } catch (error: unknown) {
