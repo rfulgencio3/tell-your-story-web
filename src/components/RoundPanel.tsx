@@ -89,7 +89,7 @@ export function RoundPanel({
                   : 'A sala esta pronta para sincronizar a rodada.'
 
   return (
-    <article className="panel round-panel">
+    <article className={`panel round-panel phase-${currentRound?.status ?? 'waiting'}`}>
       <div className="panel-header">
         <span>Rodada atual</span>
         <strong>{currentRoundLabel}</strong>

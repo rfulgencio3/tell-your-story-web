@@ -3,7 +3,7 @@ export function ActivityPanel({ items }: { items: string[] }) {
     <article className="panel feed-panel">
       <div className="panel-header">
         <span>Atividade</span>
-        <strong>Ultimos eventos</strong>
+        <strong>Feed da sala</strong>
       </div>
       <ul className="activity-list">
         {items.length === 0 ? <li>Nenhum evento realtime recebido ainda.</li> : null}

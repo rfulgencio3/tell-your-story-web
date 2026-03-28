@@ -134,6 +134,43 @@ export default function App() {
   const currentRoundLabel = currentRound
     ? `${currentRound.round_number}/${roomState?.room.max_rounds ?? 1} - ${currentRound.status}`
     : roomState?.room.status ?? 'waiting'
+  const hasLiveRoom = Boolean(session && roomState)
+  const heroLabel =
+    roomState?.room.status === 'waiting'
+      ? 'Lobby da sala'
+      : roomState?.room.status === 'paused'
+        ? 'Rodada pausada'
+        : currentRound?.status === 'writing'
+          ? 'Fase de escrita'
+          : currentRound?.status === 'voting'
+            ? 'Fase de votacao'
+            : currentRound?.status === 'revealed'
+              ? 'Revelacao'
+              : 'TellYourStory'
+  const heroTitle =
+    roomState?.room.status === 'waiting'
+      ? 'Aguardando participantes.'
+      : roomState?.room.status === 'paused'
+        ? 'Segure o ritmo e retome quando quiser.'
+        : currentRound?.status === 'writing'
+          ? 'Escreva a melhor historia.'
+          : currentRound?.status === 'voting'
+            ? 'Vote na melhor historia!'
+            : currentRound?.status === 'revealed'
+              ? 'E o vencedor e...'
+              : 'Sua sala esta pronta.'
+  const heroDescription =
+    roomState?.room.status === 'waiting'
+      ? 'Monte o grupo, compartilhe o codigo e inicie quando todos estiverem prontos.'
+      : roomState?.room.status === 'paused'
+        ? 'A rodada esta em pausa e o estado atual segue preservado.'
+        : currentRound?.status === 'writing'
+          ? 'Use o bloco principal para contar sua narrativa antes do tempo acabar.'
+          : currentRound?.status === 'voting'
+            ? 'As historias aparecem como cards de votacao. Escolha a sua favorita.'
+            : currentRound?.status === 'revealed'
+              ? 'Confira o destaque da rodada e prepare o proximo tema.'
+              : 'Acompanhe o estado da sala, participantes e feed em tempo real.'
   const surfaceNotice =
     notice ??
     (busyAction === 'restore-room' && session && !roomState
@@ -399,15 +436,85 @@ export default function App() {
     }
   }
 
+  if (!hasLiveRoom) {
+    return (
+      <main className="entry-page">
+        <div className="entry-gradient" />
+        <div className="entry-dots" />
+
+        <section className="entry-shell">
+          <header className="entry-branding">
+            <div className="logo-stack">
+              <div className="logo-tile">TellYourStory</div>
+            </div>
+            <div className="entry-copy">
+              <p className="eyebrow">Kinetic Narrative</p>
+              <h1>Junte seu grupo e coloque a melhor historia na roda.</h1>
+              <p>
+                Sala, cronometro, rodada e reveal sincronizados com backend Go em tempo real.
+              </p>
+            </div>
+          </header>
+
+          <BannerStack errorMessage={errorMessage} notice={surfaceNotice} />
+
+          <section className="entry-layout">
+            <div className="entry-showcase">
+              <div className="showcase-card showcase-card-primary">
+                <span>Lobby vivo</span>
+                <strong>Codigo compartilhavel e reconexao automatica.</strong>
+              </div>
+              <div className="showcase-card showcase-card-secondary">
+                <span>Rodadas</span>
+                <strong>Escrita, votacao e reveal no mesmo fluxo visual.</strong>
+              </div>
+              <div className="showcase-card showcase-card-tertiary">
+                <span>Realtime</span>
+                <strong>Presenca, progresso e resultado chegando sem refresh.</strong>
+              </div>
+            </div>
+
+            <AuthPanel
+              createForm={createForm}
+              joinForm={joinForm}
+              busyAction={busyAction}
+              onCreateRoom={onCreateRoom}
+              onJoinRoom={onJoinRoom}
+              onCreateFormChange={(field, value) => {
+                setCreateForm((current) => ({ ...current, [field]: value }))
+              }}
+              onJoinFormChange={(field, value) => {
+                setJoinForm((current) => ({ ...current, [field]: value }))
+              }}
+            />
+          </section>
+
+          <footer className="entry-footer">
+            <span>Nenhuma sessao ativa</span>
+            <span>API {API_BASE_URL}</span>
+            <span>Realtime {realtimeStatus}</span>
+          </footer>
+        </section>
+      </main>
+    )
+  }
+
   return (
-    <main className="page-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Tell Your Story</p>
-          <h1>Lobby, rodada e realtime conectados ao backend Go.</h1>
+    <main className="game-page">
+      <header className="game-topbar">
+        <div className="game-topbar-brand">
+          <span>TellYourStory</span>
         </div>
-        <div className="topbar-meta">
-          <StatusPill label={`API ${API_BASE_URL}`} tone="neutral" />
+        <nav className="game-topbar-nav">
+          <span className={roomState?.room.status === 'waiting' ? 'active' : ''}>Lobby</span>
+          <span className={roomState?.room.status !== 'waiting' ? 'active' : ''}>Game</span>
+          <span>Players</span>
+        </nav>
+        <div className="game-topbar-meta">
+          <div className="room-code-chip">
+            <span>Room Code</span>
+            <strong>{roomState?.room.code}</strong>
+          </div>
           <StatusPill
             label={`Realtime ${realtimeStatus}`}
             tone={
@@ -421,66 +528,106 @@ export default function App() {
         </div>
       </header>
 
-      <BannerStack errorMessage={errorMessage} notice={surfaceNotice} />
+      <aside className="game-sidebar">
+        <div className="sidebar-room-card">
+          <div className="sidebar-avatar">{(currentUser?.nickname ?? session?.nickname ?? 'TS').slice(0, 2).toUpperCase()}</div>
+          <strong>Room: {roomState?.room.code}</strong>
+          <p>{roomState?.users.length} participantes conectados</p>
+        </div>
 
-      <section className="layout-grid">
-        <AuthPanel
-          createForm={createForm}
-          joinForm={joinForm}
-          busyAction={busyAction}
-          onCreateRoom={onCreateRoom}
-          onJoinRoom={onJoinRoom}
-          onCreateFormChange={(field, value) => {
-            setCreateForm((current) => ({ ...current, [field]: value }))
-          }}
-          onJoinFormChange={(field, value) => {
-            setJoinForm((current) => ({ ...current, [field]: value }))
-          }}
-        />
+        <nav className="sidebar-nav">
+          <button type="button" className={roomState?.room.status === 'waiting' ? 'active' : ''}>
+            Lobby
+          </button>
+          <button type="button" className={roomState?.room.status !== 'waiting' ? 'active' : ''}>
+            Game
+          </button>
+          <button type="button">Players</button>
+          <button type="button">Settings</button>
+        </nav>
 
-        <section className="workspace">
-          <RoomPanel
-            session={session}
-            roomState={roomState}
-            currentUser={currentUser}
-            currentRoundNumberLabel={currentRoundLabel}
-            phaseEndsIn={phaseEndsIn}
-            isHost={isHost}
-            busyAction={busyAction}
-            onRefresh={() => void runRoomAction('refresh')}
-            onStart={() => void runRoomAction('start')}
-            onPause={() => void runRoomAction('pause')}
-            onAdvance={() => void runRoomAction('advance')}
-            onReveal={() => void runRoomAction('reveal')}
-            onLeave={() => void runRoomAction('leave')}
-            onCopyCode={() => void copyRoomCode()}
-          />
+        <button type="button" className="sidebar-cta" onClick={() => void copyRoomCode()}>
+          Compartilhar sala
+        </button>
+      </aside>
 
-          <div className="workspace-grid">
-            <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />
-            <RoundPanel
-              roomState={roomState}
-              currentRoundLabel={currentRoundLabel}
-              isHost={isHost}
-              storyProgress={storyProgress}
-              voteProgress={voteProgress}
-              storyCards={storyCards}
-              voteSummaries={voteSummaries}
-              userVote={userVote}
-              topStory={topStory}
-              storyForm={storyForm}
-              busyAction={busyAction}
-              hasSubmittedStory={hasSubmittedStory}
-              hasVoted={hasVoted}
-              onStoryFormChange={(field, value) => {
-                setStoryForm((current) => ({ ...current, [field]: value }))
-              }}
-              onSubmitStory={onSubmitStory}
-              onVote={(storyId) => void onVote(storyId)}
-            />
+      <section className="game-canvas">
+        <BannerStack errorMessage={errorMessage} notice={surfaceNotice} />
+
+        <section className="hero-panel">
+          <div>
+            <p className="eyebrow">{heroLabel}</p>
+            <h1>{heroTitle}</h1>
+            <p>{heroDescription}</p>
+          </div>
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <span>Rodada</span>
+              <strong>{currentRoundLabel}</strong>
+            </div>
+            <div className="hero-stat">
+              <span>Tempo</span>
+              <strong>{phaseEndsIn}</strong>
+            </div>
+            <div className="hero-stat">
+              <span>Jogadores</span>
+              <strong>{roomState?.users.length}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="game-grid">
+          <div className="game-primary-column">
+            {roomState?.room.status === 'waiting' || !currentRound ? (
+              <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />
+            ) : (
+              <RoundPanel
+                roomState={roomState}
+                currentRoundLabel={currentRoundLabel}
+                isHost={isHost}
+                storyProgress={storyProgress}
+                voteProgress={voteProgress}
+                storyCards={storyCards}
+                voteSummaries={voteSummaries}
+                userVote={userVote}
+                topStory={topStory}
+                storyForm={storyForm}
+                busyAction={busyAction}
+                hasSubmittedStory={hasSubmittedStory}
+                hasVoted={hasVoted}
+                onStoryFormChange={(field, value) => {
+                  setStoryForm((current) => ({ ...current, [field]: value }))
+                }}
+                onSubmitStory={onSubmitStory}
+                onVote={(storyId) => void onVote(storyId)}
+              />
+            )}
+
+            <ActivityPanel items={activityFeed} />
           </div>
 
-          <ActivityPanel items={activityFeed} />
+          <aside className="game-secondary-column">
+            <RoomPanel
+              session={session}
+              roomState={roomState}
+              currentUser={currentUser}
+              currentRoundNumberLabel={currentRoundLabel}
+              phaseEndsIn={phaseEndsIn}
+              isHost={isHost}
+              busyAction={busyAction}
+              onRefresh={() => void runRoomAction('refresh')}
+              onStart={() => void runRoomAction('start')}
+              onPause={() => void runRoomAction('pause')}
+              onAdvance={() => void runRoomAction('advance')}
+              onReveal={() => void runRoomAction('reveal')}
+              onLeave={() => void runRoomAction('leave')}
+              onCopyCode={() => void copyRoomCode()}
+            />
+
+            {roomState?.room.status !== 'waiting' && currentRound ? (
+              <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />
+            ) : null}
+          </aside>
         </section>
       </section>
     </main>

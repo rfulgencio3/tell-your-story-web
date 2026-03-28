@@ -1,5 +1,10 @@
 import type { User } from '../types'
 
+function initialsFromName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('')
+}
+
 export function ParticipantsPanel({
   users,
   currentUserId,
@@ -13,10 +18,14 @@ export function ParticipantsPanel({
         <span>Participantes</span>
         <strong>{users.length} conectados</strong>
       </div>
-      <div className="user-list">
+
+      <div className="players-orb-grid">
         {users.map((user) => (
-          <article key={user.id} className={`user-card${user.id === currentUserId ? ' current' : ''}`}>
-            <div>
+          <article key={user.id} className={`player-orb-card${user.id === currentUserId ? ' current' : ''}`}>
+            <div className={`player-orb${user.is_host ? ' host' : ''}`}>
+              {user.avatar_url ? <img src={user.avatar_url} alt={user.nickname} /> : <span>{initialsFromName(user.nickname)}</span>}
+            </div>
+            <div className="player-orb-copy">
               <strong>{user.nickname}</strong>
               <p>{user.is_host ? 'Host' : 'Participante'}</p>
             </div>

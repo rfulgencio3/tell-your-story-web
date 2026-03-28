@@ -296,7 +296,7 @@ describe('App', () => {
     render(<App />)
 
     expect(await screen.findByText('A montanha')).toBeInTheDocument()
-    expect(screen.getByText('Fase de votacao')).toBeInTheDocument()
+    expect(screen.getAllByText('Fase de votacao').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Avancar para revelacao' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Votar nesta historia' })).toBeInTheDocument()
   })
