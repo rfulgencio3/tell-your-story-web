@@ -124,33 +124,48 @@ export function RoomPanel({
           </div>
 
           <div className="action-row">
-            <button type="button" onClick={onRefresh} disabled={busyAction === 'refresh'}>
+            <button
+              type="button"
+              className="secondary utility-action"
+              onClick={onRefresh}
+              disabled={busyAction === 'refresh'}
+            >
               Atualizar
             </button>
-            <button type="button" className="secondary" onClick={onCopyCode}>
+            <button type="button" className="secondary utility-action" onClick={onCopyCode}>
               Copiar codigo
             </button>
             {isHost && (roomState.room.status === 'waiting' || roomState.room.status === 'paused') ? (
-              <button type="button" onClick={onStart} disabled={busyAction === 'start'}>
+              <button type="button" className="primary-action" onClick={onStart} disabled={busyAction === 'start'}>
                 {roomState.room.status === 'paused' ? 'Retomar rodada' : 'Iniciar jogo'}
               </button>
             ) : null}
             {isHost && roomState.room.status === 'active' ? (
-              <button type="button" onClick={onPause} disabled={busyAction === 'pause'}>
+              <button type="button" className="primary-action" onClick={onPause} disabled={busyAction === 'pause'}>
                 Pausar
               </button>
             ) : null}
             {isHost && roomState.current_round ? (
-              <button type="button" className="secondary" onClick={onAdvance} disabled={busyAction === 'advance'}>
+              <button
+                type="button"
+                className="secondary flow-action"
+                onClick={onAdvance}
+                disabled={busyAction === 'advance'}
+              >
                 {actionLabel}
               </button>
             ) : null}
             {isHost && roomState.current_round?.status === 'revealed' ? (
-              <button type="button" className="secondary" onClick={onReveal} disabled={busyAction === 'reveal'}>
+              <button
+                type="button"
+                className="secondary flow-action"
+                onClick={onReveal}
+                disabled={busyAction === 'reveal'}
+              >
                 Revelar vencedora
               </button>
             ) : null}
-            <button type="button" className="ghost" onClick={onLeave} disabled={busyAction === 'leave'}>
+            <button type="button" className="ghost leave-action" onClick={onLeave} disabled={busyAction === 'leave'}>
               Sair da sala
             </button>
           </div>

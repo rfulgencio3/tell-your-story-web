@@ -534,59 +534,67 @@ export default function App() {
           <BannerStack errorMessage={errorMessage} notice={surfaceNotice} />
 
           <section className="entry-layout">
-            <div className="entry-showcase">
-              <div className="showcase-card showcase-card-primary">
-                <div className="showcase-card-badge">Lobby vivo</div>
-                <strong>Codigo compartilhavel com entrada imediata do grupo.</strong>
-                <p>Crie a sala, distribua o codigo e veja os participantes ocupando o lobby em tempo real.</p>
-                <div className="showcase-card-foot">
-                  <span>Host + participantes</span>
-                  <strong>Presenca sincronizada</strong>
-                </div>
+            <div className="entry-feature-row">
+              <div className="showcase-card showcase-card-primary compact">
+                <div className="showcase-card-badge">Convide rapido</div>
+                <strong>Crie a sala e compartilhe o codigo com o grupo.</strong>
+                <p>Quem receber o codigo entra na mesma sala em poucos segundos.</p>
               </div>
-              <div className="showcase-card showcase-card-secondary">
-                <div className="showcase-card-badge">Rodadas</div>
-                <strong>Escrita, votacao e reveal no mesmo fluxo visual.</strong>
-                <p>O jogo alterna entre narrativa, escolha e resultado sem perder contexto entre as fases.</p>
-                <div className="showcase-mini-grid">
-                  <div>
-                    <span>Escrita</span>
-                    <strong>Bloco de historia</strong>
-                  </div>
-                  <div>
-                    <span>Reveal</span>
-                    <strong>Card vencedor</strong>
-                  </div>
-                </div>
+              <div className="showcase-card showcase-card-secondary compact">
+                <div className="showcase-card-badge">Jogue por fases</div>
+                <strong>Escreva, vote e descubra a vencedora sem sair da sala.</strong>
+                <p>O jogo conduz cada rodada de forma simples e visual.</p>
               </div>
-              <div className="showcase-card showcase-card-tertiary">
-                <div className="showcase-card-badge">Realtime</div>
-                <strong>Presenca, progresso e resultado chegando sem refresh.</strong>
-                <p>O canal em tempo real atualiza contagem, reconnect e reveal com o ritmo do jogo.</p>
-                <div className="showcase-pulse-row">
-                  <span className="pulse-dot" />
-                  <strong>WebSocket com reconexao automatica</strong>
-                </div>
+              <div className="showcase-card showcase-card-tertiary compact">
+                <div className="showcase-card-badge">Tudo ao vivo</div>
+                <strong>A sala se atualiza automaticamente enquanto o grupo joga.</strong>
+                <p>Entrada, progresso e resultado aparecem em tempo real.</p>
               </div>
             </div>
 
-            <AuthPanel
-              activeMode={entryMode}
-              createForm={createForm}
-              joinForm={joinForm}
-              busyAction={busyAction}
-              onModeChange={(mode) => {
-                setEntryMode(mode)
-              }}
-              onCreateRoom={onCreateRoom}
-              onJoinRoom={onJoinRoom}
-              onCreateFormChange={(field, value) => {
-                setCreateForm((current) => ({ ...current, [field]: value }))
-              }}
-              onJoinFormChange={(field, value) => {
-                setJoinForm((current) => ({ ...current, [field]: value }))
-              }}
-            />
+            <div className="entry-action-row">
+              <AuthPanel
+                activeMode={entryMode}
+                createForm={createForm}
+                joinForm={joinForm}
+                busyAction={busyAction}
+                onModeChange={(mode) => {
+                  setEntryMode(mode)
+                }}
+                onCreateRoom={onCreateRoom}
+                onJoinRoom={onJoinRoom}
+                onCreateFormChange={(field, value) => {
+                  setCreateForm((current) => ({ ...current, [field]: value }))
+                }}
+                onJoinFormChange={(field, value) => {
+                  setJoinForm((current) => ({ ...current, [field]: value }))
+                }}
+              />
+
+              <aside className="rules-panel">
+                <div className="panel-header">
+                  <span>Regras rapidas</span>
+                  <strong>Como funciona</strong>
+                </div>
+                <div className="rules-list">
+                  <article className="rule-card">
+                    <span>01</span>
+                    <strong>Todo mundo entra na mesma sala.</strong>
+                    <p>O host cria a sala e compartilha o codigo com o grupo.</p>
+                  </article>
+                  <article className="rule-card">
+                    <span>02</span>
+                    <strong>Cada rodada tem escrita, voto e revelacao.</strong>
+                    <p>Voce escreve sua historia, vota na favorita e espera o resultado.</p>
+                  </article>
+                  <article className="rule-card">
+                    <span>03</span>
+                    <strong>Ganha a historia que conquistar mais votos.</strong>
+                    <p>O host avanca as fases e pode iniciar a proxima rodada quando quiser.</p>
+                  </article>
+                </div>
+              </aside>
+            </div>
           </section>
         </section>
       </main>
