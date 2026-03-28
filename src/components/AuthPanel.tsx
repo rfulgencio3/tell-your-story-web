@@ -1,4 +1,5 @@
 import type { FormEvent } from 'react'
+import { AvatarPicker } from './AvatarPicker'
 
 export interface CreateFormState {
   hostNickname: string
@@ -55,14 +56,12 @@ export function AuthPanel({
               required
             />
           </label>
-          <label>
-            <span>Avatar URL</span>
-            <input
-              value={createForm.hostAvatarUrl}
-              onChange={(event) => onCreateFormChange('hostAvatarUrl', event.target.value)}
-              placeholder="https://..."
-            />
-          </label>
+          <AvatarPicker
+            title="Avatar do host"
+            subtitle="Escolha quem vai representar voce no jogo"
+            selectedAvatarUrl={createForm.hostAvatarUrl}
+            onSelect={(avatarUrl) => onCreateFormChange('hostAvatarUrl', avatarUrl)}
+          />
           <div className="inline-fields">
             <label>
               <span>Rodadas</span>
@@ -113,14 +112,12 @@ export function AuthPanel({
               required
             />
           </label>
-          <label>
-            <span>Avatar URL</span>
-            <input
-              value={joinForm.avatarUrl}
-              onChange={(event) => onJoinFormChange('avatarUrl', event.target.value)}
-              placeholder="https://..."
-            />
-          </label>
+          <AvatarPicker
+            title="Avatar do participante"
+            subtitle="Escolha um avatar fixo da galeria"
+            selectedAvatarUrl={joinForm.avatarUrl}
+            onSelect={(avatarUrl) => onJoinFormChange('avatarUrl', avatarUrl)}
+          />
           <button type="submit" className="secondary" disabled={busyAction === 'join-room'}>
             {busyAction === 'join-room' ? 'Entrando...' : 'Entrar'}
           </button>

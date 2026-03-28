@@ -27,12 +27,13 @@ import { useActivityFeed } from './hooks/useActivityFeed'
 import { usePersistentSession } from './hooks/usePersistentSession'
 import { useRealtime } from './hooks/useRealtime'
 import { useRoundData } from './hooks/useRoundData'
+import { defaultAvatarUrl } from './lib/avatar-options'
 import { formatTimeRemaining } from './lib/format'
 import type { RoomState } from './types'
 
 const initialCreateForm: CreateFormState = {
   hostNickname: '',
-  hostAvatarUrl: '',
+  hostAvatarUrl: defaultAvatarUrl,
   maxRounds: 3,
   timePerRound: 120,
 }
@@ -40,7 +41,7 @@ const initialCreateForm: CreateFormState = {
 const initialJoinForm: JoinFormState = {
   roomCode: '',
   nickname: '',
-  avatarUrl: '',
+  avatarUrl: defaultAvatarUrl,
 }
 
 const initialStoryForm = {
@@ -525,7 +526,7 @@ export default function App() {
     <main className="game-page">
       <header className="game-topbar">
         <div className="game-topbar-brand">
-          <span>TellYourStory</span>
+          <img className="game-topbar-logo" src={officialLogo} alt="Tell Your Story" />
         </div>
         <nav className="game-topbar-nav">
           <span className={roomState?.room.status === 'waiting' ? 'active' : ''}>Lobby</span>
@@ -552,7 +553,13 @@ export default function App() {
 
       <aside className="game-sidebar">
         <div className="sidebar-room-card">
-          <div className="sidebar-avatar">{(currentUser?.nickname ?? session?.nickname ?? 'TS').slice(0, 2).toUpperCase()}</div>
+          <div className="sidebar-avatar">
+            {currentUser?.avatar_url ? (
+              <img src={currentUser.avatar_url} alt={currentUser.nickname} />
+            ) : (
+              <span>{(currentUser?.nickname ?? session?.nickname ?? 'TS').slice(0, 2).toUpperCase()}</span>
+            )}
+          </div>
           <strong>Room: {roomState?.room.code}</strong>
           <p>{roomState?.users.length} participantes conectados</p>
         </div>

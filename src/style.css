@@ -102,16 +102,16 @@ img {
   position: relative;
   z-index: 1;
   min-height: 100vh;
-  padding: 48px 24px 24px;
+  padding: 28px 24px 20px;
   display: grid;
-  align-content: center;
-  gap: 28px;
+  align-content: start;
+  gap: 20px;
 }
 
 .entry-branding {
   display: grid;
   justify-items: center;
-  gap: 18px;
+  gap: 10px;
   text-align: center;
 }
 
@@ -121,8 +121,8 @@ img {
 }
 
 .logo-mark {
-  width: min(560px, 68vw);
-  filter: drop-shadow(0 28px 46px rgba(9, 12, 30, 0.3));
+  width: min(500px, 60vw);
+  filter: drop-shadow(0 20px 36px rgba(9, 12, 30, 0.28));
   transform: rotate(-1.5deg);
 }
 
@@ -139,7 +139,7 @@ img {
 }
 
 .entry-copy p:last-child {
-  margin: 14px auto 0;
+  margin: 10px auto 0;
   max-width: 56ch;
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.82);
@@ -150,13 +150,13 @@ img {
   margin: 0 auto;
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: 28px;
+  gap: 22px;
   align-items: stretch;
 }
 
 .entry-showcase {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .showcase-card {
@@ -282,7 +282,7 @@ img {
 }
 
 .entry-card-header {
-  margin-bottom: 26px;
+  margin-bottom: 20px;
 }
 
 .entry-card-header strong {
@@ -299,12 +299,12 @@ img {
 
 .entry-forms-grid {
   display: grid;
-  gap: 20px;
+  gap: 16px;
 }
 
 .entry-form-block {
   border-radius: 26px;
-  padding: 22px;
+  padding: 20px;
   background: #f8f9ff;
   border: 2px solid rgba(109, 119, 136, 0.35);
 }
@@ -341,7 +341,7 @@ img {
   margin: 0 auto;
   display: flex;
   justify-content: center;
-  gap: 18px;
+  gap: 14px;
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.85rem;
 }
@@ -358,23 +358,20 @@ img {
   justify-content: space-between;
   align-items: center;
   gap: 18px;
-  padding: 14px 24px;
+  padding: 10px 20px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(14px);
   border-bottom: 3px solid rgba(112, 42, 225, 0.9);
 }
 
-.game-topbar-brand span {
-  color: var(--panel-violet);
-  font-size: 1.9rem;
-  font-style: italic;
-  font-weight: 800;
-  letter-spacing: -0.04em;
+.game-topbar-logo {
+  width: 196px;
+  max-width: 42vw;
 }
 
 .game-topbar-nav {
   display: flex;
-  gap: 24px;
+  gap: 18px;
   align-items: center;
 }
 
@@ -398,7 +395,7 @@ img {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 18px;
+  padding: 10px 16px;
   border-radius: 999px;
   border: 3px solid #3d2b00;
   background: var(--panel-yellow);
@@ -421,14 +418,14 @@ img {
 .game-sidebar {
   position: fixed;
   left: 0;
-  top: 74px;
+  top: 62px;
   bottom: 0;
   width: 250px;
   z-index: 20;
-  padding: 22px 18px;
+  padding: 16px 16px 18px;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  gap: 18px;
+  gap: 14px;
   background: rgba(255, 255, 255, 0.93);
   border-right: 4px solid rgba(112, 42, 225, 0.92);
 }
@@ -451,6 +448,18 @@ img {
   color: var(--panel-violet);
   font-size: 1.45rem;
   font-weight: 800;
+  overflow: hidden;
+}
+
+.sidebar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar-avatar span {
+  display: inline-grid;
+  place-items: center;
 }
 
 .sidebar-room-card strong {
@@ -466,7 +475,7 @@ img {
 
 .sidebar-nav {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .sidebar-nav button {
@@ -474,6 +483,7 @@ img {
   align-items: center;
   justify-content: flex-start;
   padding: 14px 16px;
+  min-height: 46px;
   border-radius: 999px;
   background: transparent;
   color: #798499;
@@ -500,7 +510,66 @@ img {
 
 .game-canvas {
   margin-left: 250px;
-  padding: 28px 24px 32px;
+  padding: 20px 24px 28px;
+}
+
+.avatar-picker {
+  display: grid;
+  gap: 12px;
+}
+
+.avatar-picker-header span {
+  display: block;
+  color: #5e697b;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.avatar-picker-header strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.98rem;
+  letter-spacing: -0.02em;
+}
+
+.avatar-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.avatar-choice {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 20px;
+  border: 2px solid rgba(112, 42, 225, 0.16);
+  background: #ffffff;
+  color: var(--panel-violet-deep);
+  box-shadow: 0 4px 0 rgba(112, 42, 225, 0.08);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.avatar-choice img {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.avatar-choice span {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.avatar-choice.selected {
+  border-color: var(--panel-violet);
+  background: #f1e9ff;
+  box-shadow: 0 4px 0 rgba(112, 42, 225, 0.2);
 }
 
 .hero-panel {
@@ -1089,6 +1158,10 @@ button.ghost {
     width: min(420px, 88vw);
   }
 
+  .game-topbar-logo {
+    width: 156px;
+  }
+
   .auth-panel,
   .panel {
     padding: 20px;
@@ -1104,6 +1177,10 @@ button.ghost {
   .progress-grid,
   .hero-stats {
     grid-template-columns: 1fr;
+  }
+
+  .avatar-picker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .story-list,

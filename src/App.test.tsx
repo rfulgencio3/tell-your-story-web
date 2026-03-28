@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { defaultAvatarUrl } from './lib/avatar-options'
 import type { AuthenticatedRoomState, RoomState, SessionState, TopStoryResult } from './types'
 
 const {
@@ -209,7 +210,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(createRoomMock).toHaveBeenCalledWith({
         host_nickname: 'Ricardo',
-        host_avatar_url: '',
+        host_avatar_url: defaultAvatarUrl,
         max_rounds: 3,
         time_per_round: 120,
       })
@@ -237,7 +238,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(joinRoomMock).toHaveBeenCalledWith('ABCD12', {
         nickname: 'Ana',
-        avatar_url: '',
+        avatar_url: defaultAvatarUrl,
       })
     })
 
