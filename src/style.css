@@ -120,16 +120,10 @@ img {
   place-items: center;
 }
 
-.logo-tile {
-  background: #101010;
-  color: #65e1ff;
-  padding: 38px 34px;
-  min-width: 180px;
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 800;
-  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.22);
-  transform: rotate(-2deg);
+.logo-mark {
+  width: min(560px, 68vw);
+  filter: drop-shadow(0 28px 46px rgba(9, 12, 30, 0.3));
+  transform: rotate(-1.5deg);
 }
 
 .entry-copy {
@@ -166,27 +160,108 @@ img {
 }
 
 .showcase-card {
+  position: relative;
   border-radius: 28px;
   padding: 28px;
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.1));
   backdrop-filter: blur(14px);
   color: white;
   box-shadow: 10px 10px 0 rgba(57, 0, 131, 0.3);
+  overflow: hidden;
 }
 
-.showcase-card span {
-  display: block;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  font-weight: 800;
+.showcase-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -40px -40px auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .showcase-card strong {
   font-size: 1.4rem;
   line-height: 1.08;
   letter-spacing: -0.03em;
+}
+
+.showcase-card p {
+  position: relative;
+  z-index: 1;
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.showcase-card-badge,
+.showcase-card-foot span,
+.showcase-mini-grid span {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.showcase-card-foot {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+}
+
+.showcase-card-foot strong,
+.showcase-mini-grid strong,
+.showcase-pulse-row strong {
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.showcase-mini-grid {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.showcase-mini-grid > div {
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.showcase-mini-grid span {
+  margin-bottom: 8px;
+}
+
+.showcase-pulse-row {
+  position: relative;
+  z-index: 1;
+  margin-top: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: rgba(18, 22, 44, 0.18);
+}
+
+.pulse-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #65e1ff;
+  box-shadow: 0 0 0 6px rgba(101, 225, 255, 0.18);
 }
 
 .showcase-card-secondary {
@@ -1010,6 +1085,10 @@ button.ghost {
     gap: 20px;
   }
 
+  .logo-mark {
+    width: min(420px, 88vw);
+  }
+
   .auth-panel,
   .panel {
     padding: 20px;
@@ -1030,6 +1109,12 @@ button.ghost {
   .story-list,
   .players-orb-grid {
     grid-template-columns: 1fr;
+  }
+
+  .showcase-mini-grid,
+  .showcase-card-foot {
+    grid-template-columns: 1fr;
+    display: grid;
   }
 
   .game-topbar-meta {

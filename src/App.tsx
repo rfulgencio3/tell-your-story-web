@@ -22,6 +22,7 @@ import { ParticipantsPanel } from './components/ParticipantsPanel'
 import { RoomPanel } from './components/RoomPanel'
 import { RoundPanel } from './components/RoundPanel'
 import { StatusPill } from './components/StatusPill'
+import officialLogo from './assets/official-logo.png'
 import { useActivityFeed } from './hooks/useActivityFeed'
 import { usePersistentSession } from './hooks/usePersistentSession'
 import { useRealtime } from './hooks/useRealtime'
@@ -445,7 +446,7 @@ export default function App() {
         <section className="entry-shell">
           <header className="entry-branding">
             <div className="logo-stack">
-              <div className="logo-tile">TellYourStory</div>
+              <img className="logo-mark" src={officialLogo} alt="Tell Your Story" />
             </div>
             <div className="entry-copy">
               <p className="eyebrow">Kinetic Narrative</p>
@@ -461,16 +462,37 @@ export default function App() {
           <section className="entry-layout">
             <div className="entry-showcase">
               <div className="showcase-card showcase-card-primary">
-                <span>Lobby vivo</span>
-                <strong>Codigo compartilhavel e reconexao automatica.</strong>
+                <div className="showcase-card-badge">Lobby vivo</div>
+                <strong>Codigo compartilhavel com entrada imediata do grupo.</strong>
+                <p>Crie a sala, distribua o codigo e veja os participantes ocupando o lobby em tempo real.</p>
+                <div className="showcase-card-foot">
+                  <span>Host + participantes</span>
+                  <strong>Presenca sincronizada</strong>
+                </div>
               </div>
               <div className="showcase-card showcase-card-secondary">
-                <span>Rodadas</span>
+                <div className="showcase-card-badge">Rodadas</div>
                 <strong>Escrita, votacao e reveal no mesmo fluxo visual.</strong>
+                <p>O jogo alterna entre narrativa, escolha e resultado sem perder contexto entre as fases.</p>
+                <div className="showcase-mini-grid">
+                  <div>
+                    <span>Escrita</span>
+                    <strong>Bloco de historia</strong>
+                  </div>
+                  <div>
+                    <span>Reveal</span>
+                    <strong>Card vencedor</strong>
+                  </div>
+                </div>
               </div>
               <div className="showcase-card showcase-card-tertiary">
-                <span>Realtime</span>
+                <div className="showcase-card-badge">Realtime</div>
                 <strong>Presenca, progresso e resultado chegando sem refresh.</strong>
+                <p>O canal em tempo real atualiza contagem, reconnect e reveal com o ritmo do jogo.</p>
+                <div className="showcase-pulse-row">
+                  <span className="pulse-dot" />
+                  <strong>WebSocket com reconexao automatica</strong>
+                </div>
               </div>
             </div>
 
