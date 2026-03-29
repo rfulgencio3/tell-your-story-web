@@ -1,10 +1,12 @@
 import type {
   AuthenticatedRoomState,
+  GameType,
   RoomState,
   SessionState,
   Story,
   StoryCard,
   TopStoryResult,
+  TruthSet,
   UserVote,
   VoteSummary,
 } from './types'
@@ -65,6 +67,7 @@ export function getRealtimeUrl(session: SessionState): string {
 export function createRoom(input: {
   host_nickname: string
   host_avatar_url?: string
+  game_type: GameType
   max_rounds: number
   time_per_round: number
 }) {
@@ -138,6 +141,16 @@ export function getUserVote(roundId: string, session: SessionState) {
 
 export function getTopStory(roundId: string) {
   return request<TopStoryResult>(`/api/rounds/${roundId}/top-story`, 'GET')
+}
+
+export function submitTruthSet(input: {
+  round_id: string
+  user_id: string
+  session_token: string
+  statements: string[]
+  true_statement_index: number
+}) {
+  return request<TruthSet>('/api/three-lies/truth-sets', 'POST', input)
 }
 
 export function sessionFromRoomState(state: AuthenticatedRoomState): SessionState {

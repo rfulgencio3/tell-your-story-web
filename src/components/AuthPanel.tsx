@@ -1,11 +1,13 @@
 import type { FormEvent } from 'react'
 import { AvatarPicker } from './AvatarPicker'
+import type { GameType } from '../types'
 
 export type EntryMode = 'create' | 'join'
 
 export interface CreateFormState {
   hostNickname: string
   hostAvatarUrl: string
+  gameType: GameType
   maxRounds: number
   timePerRound: number
 }
@@ -80,6 +82,27 @@ export function AuthPanel({
                 required
               />
             </label>
+            <fieldset className="game-type-picker">
+              <legend>Modo de jogo</legend>
+              <div className="game-type-picker-grid">
+                <button
+                  type="button"
+                  className={createForm.gameType === 'tell-your-story' ? 'selected' : ''}
+                  onClick={() => onCreateFormChange('gameType', 'tell-your-story')}
+                >
+                  <strong>Tell Your Story</strong>
+                  <span>Escreva, vote e revele a historia vencedora.</span>
+                </button>
+                <button
+                  type="button"
+                  className={createForm.gameType === 'three-lies-one-truth' ? 'selected' : ''}
+                  onClick={() => onCreateFormChange('gameType', 'three-lies-one-truth')}
+                >
+                  <strong>Three Lies, One Truth</strong>
+                  <span>Todo mundo escreve 4 afirmacoes e o grupo tenta achar a verdade.</span>
+                </button>
+              </div>
+            </fieldset>
             <AvatarPicker
               title="Avatar do host"
               subtitle="Escolha quem vai representar voce no jogo"

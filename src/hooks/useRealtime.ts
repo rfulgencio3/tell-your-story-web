@@ -39,6 +39,7 @@ export function useRealtime({
   const handleRealtimeEvent = useEffectEvent((event: RealtimeEnvelope) => {
     switch (event.type) {
       case 'room.state':
+      case 'room.sync.snapshot':
         onRoomState(event.data as RoomState)
         break
       case 'story.progress':

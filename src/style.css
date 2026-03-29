@@ -510,6 +510,59 @@ img {
   text-transform: uppercase;
 }
 
+.game-type-picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.game-type-picker legend {
+  color: #5e697b;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+.game-type-picker-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.game-type-picker-grid button {
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  text-align: left;
+  background: #ffffff;
+  color: var(--text);
+  border: 2px solid rgba(109, 119, 136, 0.24);
+  box-shadow: 0 6px 0 rgba(112, 42, 225, 0.08);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.game-type-picker-grid button strong {
+  font-size: 1rem;
+  line-height: 1.12;
+}
+
+.game-type-picker-grid button span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.game-type-picker-grid button.selected {
+  background: #f1e9ff;
+  border-color: var(--panel-violet);
+  box-shadow: 0 6px 0 rgba(112, 42, 225, 0.22);
+}
+
 .entry-footer {
   width: min(1120px, 100%);
   margin: 0 auto;
@@ -1372,6 +1425,158 @@ button.ghost {
   font-weight: 700;
 }
 
+.three-lies-stack {
+  display: grid;
+  gap: 22px;
+}
+
+.three-lies-panel {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.three-lies-phase-hero h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.three-lies-phase-hero p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+  max-width: 56ch;
+}
+
+.three-lies-countdown-panel {
+  min-height: 360px;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.three-lies-timer-card {
+  margin-top: 8px;
+  width: min(320px, 100%);
+  padding: 22px 24px;
+  border-radius: 28px;
+  border: 3px solid rgba(117, 86, 0, 0.4);
+  background: linear-gradient(135deg, rgba(252, 192, 37, 0.18), rgba(255, 255, 255, 0.96));
+  box-shadow: 10px 10px 0 rgba(252, 192, 37, 0.2);
+}
+
+.three-lies-timer-card.subtle {
+  border-color: rgba(112, 42, 225, 0.14);
+  background: #eef4ff;
+  box-shadow: none;
+}
+
+.three-lies-timer-card span {
+  display: block;
+  color: #6f7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.three-lies-timer-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+  color: #5b2bbf;
+}
+
+.three-lies-writing-form {
+  display: grid;
+  gap: 18px;
+}
+
+.three-lies-statement-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.three-lies-statement-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 2px solid rgba(109, 119, 136, 0.22);
+  background: #fbfcff;
+}
+
+.three-lies-statement-card.selected {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.three-lies-statement-card.locked {
+  opacity: 0.75;
+}
+
+.three-lies-statement-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.three-lies-statement-topline span {
+  color: #6f7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.three-lies-statement-topline strong {
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.three-lies-statement-card input[type='text'],
+.three-lies-statement-card input:not([type]),
+.three-lies-statement-card input[type='radio'] {
+  box-shadow: none;
+}
+
+.three-lies-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+}
+
+.three-lies-radio-row input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.three-lies-radio-row span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.three-lies-save-note {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(101, 225, 255, 0.15);
+  border: 2px solid rgba(0, 89, 105, 0.12);
+}
+
+.three-lies-save-note strong {
+  display: block;
+  font-size: 0.98rem;
+}
+
+.three-lies-save-note p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
 .feed-panel {
   background: rgba(255, 255, 255, 0.86);
 }
@@ -1490,6 +1695,7 @@ button.ghost {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .game-type-picker-grid,
   .story-list,
   .players-orb-grid {
     grid-template-columns: 1fr;

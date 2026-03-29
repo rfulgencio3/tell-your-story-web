@@ -12,6 +12,7 @@ import {
   sessionFromRoomState,
   startRoom,
   submitStory,
+  submitTruthSet,
   submitVote,
 } from './api'
 import { ActivityPanel } from './components/ActivityPanel'
@@ -25,6 +26,8 @@ import { BannerStack } from './components/BannerStack'
 import { ParticipantsPanel } from './components/ParticipantsPanel'
 import { RoomPanel } from './components/RoomPanel'
 import { RoundPanel } from './components/RoundPanel'
+import { ThreeLiesGamePanel } from './components/three-lies-one-truth/ThreeLiesGamePanel'
+import { ThreeLiesRulesPanel } from './components/three-lies-one-truth/ThreeLiesRulesPanel'
 import officialLogo from './assets/official-logo.png'
 import { useActivityFeed } from './hooks/useActivityFeed'
 import { usePersistentSession } from './hooks/usePersistentSession'
@@ -37,6 +40,7 @@ import type { RoomState } from './types'
 const initialCreateForm: CreateFormState = {
   hostNickname: '',
   hostAvatarUrl: defaultAvatarUrl,
+  gameType: 'tell-your-story',
   maxRounds: 3,
   timePerRound: 120,
 }
@@ -52,6 +56,11 @@ const initialStoryForm = {
   body: '',
 }
 
+const initialTruthSetForm = {
+  statements: ['', '', '', ''],
+  trueStatementIndex: null as number | null,
+}
+
 function formatRoundLabel(roundState: RoomState | null) {
   const currentRound = roundState?.current_round
   if (!currentRound) {
@@ -59,13 +68,104 @@ function formatRoundLabel(roundState: RoomState | null) {
   }
 
   const phaseLabel =
-    currentRound.status === 'writing'
-      ? 'Escrita'
-      : currentRound.status === 'voting'
-        ? 'Votacao'
-        : 'Revelacao'
+    currentRound.status === 'countdown'
+      ? 'Countdown'
+      : currentRound.status === 'writing'
+        ? 'Escrita'
+        : currentRound.status === 'voting' || currentRound.status === 'presentation_voting'
+          ? 'Votacao'
+          : currentRound.status === 'revealed' || currentRound.status === 'reveal'
+            ? 'Revelacao'
+            : currentRound.status === 'commentary'
+              ? 'Comentario'
+              : 'Encerrada'
 
   return `Rodada ${currentRound.round_number} - ${phaseLabel}`
+}
+
+function getHeroCopy(roomState: RoomState | null) {
+  const gameType = roomState?.room.game_type ?? 'tell-your-story'
+  const roomStatus = roomState?.room.status ?? 'waiting'
+  const roundStatus = roomState?.current_round?.status ?? null
+
+  if (gameType === 'three-lies-one-truth') {
+    if (roomStatus === 'waiting') {
+      return {
+        label: 'Three Lies, One Truth',
+        title: 'Monte a sala e prepare a primeira rodada.',
+        description: 'O host define o ritmo da partida e o grupo entra na mesma sala antes do countdown inicial.',
+      }
+    }
+
+    if (roomStatus === 'paused') {
+      return {
+        label: 'Rodada pausada',
+        title: 'O modo novo esta em pausa.',
+        description: 'O countdown, a escrita ou a apresentacao voltam do mesmo ponto assim que o host retomar.',
+      }
+    }
+
+    if (roundStatus === 'countdown') {
+      return {
+        label: 'Countdown',
+        title: 'A partida comeca em instantes.',
+        description: 'A contagem aparece para todo mundo antes da janela de escrita abrir.',
+      }
+    }
+
+    if (roundStatus === 'writing') {
+      return {
+        label: 'Writing',
+        title: 'Escreva 4 afirmacoes e esconda a verdade.',
+        description: 'Todo mundo prepara o proprio conjunto antes da sala seguir automaticamente para a apresentacao.',
+      }
+    }
+
+    return {
+      label: 'Three Lies, One Truth',
+      title: 'O modo novo esta em andamento.',
+      description: 'As proximas fases do frontend entram nas proximas slices de integracao.',
+    }
+  }
+
+  return {
+    label:
+      roomStatus === 'waiting'
+        ? 'Lobby da sala'
+        : roomStatus === 'paused'
+          ? 'Rodada pausada'
+          : roundStatus === 'writing'
+            ? 'Fase de escrita'
+            : roundStatus === 'voting'
+              ? 'Fase de votacao'
+              : roundStatus === 'revealed'
+                ? 'Revelacao'
+                : 'TellYourStory',
+    title:
+      roomStatus === 'waiting'
+        ? 'Aguardando participantes.'
+        : roomStatus === 'paused'
+          ? 'Segure o ritmo e retome quando quiser.'
+          : roundStatus === 'writing'
+            ? 'Escreva a melhor historia.'
+            : roundStatus === 'voting'
+              ? 'Vote na melhor historia!'
+              : roundStatus === 'revealed'
+                ? 'E o vencedor e...'
+                : 'Sua sala esta pronta.',
+    description:
+      roomStatus === 'waiting'
+        ? 'Monte o grupo, compartilhe o codigo e inicie quando todos estiverem prontos.'
+        : roomStatus === 'paused'
+          ? 'A rodada esta em pausa e o estado atual segue preservado.'
+          : roundStatus === 'writing'
+            ? 'Use o bloco principal para contar sua narrativa antes do tempo acabar.'
+            : roundStatus === 'voting'
+              ? 'As historias aparecem como cards de votacao. Escolha a sua favorita.'
+              : roundStatus === 'revealed'
+                ? 'Confira o destaque da rodada e prepare o proximo tema.'
+                : 'Acompanhe o estado da sala, participantes e feed em tempo real.',
+  }
 }
 
 export default function App() {
@@ -76,6 +176,8 @@ export default function App() {
   const [createForm, setCreateForm] = useState(initialCreateForm)
   const [joinForm, setJoinForm] = useState(initialJoinForm)
   const [storyForm, setStoryForm] = useState(initialStoryForm)
+  const [truthSetForm, setTruthSetForm] = useState(initialTruthSetForm)
+  const [submittedTruthSetRounds, setSubmittedTruthSetRounds] = useState<string[]>([])
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -116,6 +218,7 @@ export default function App() {
     clearAllRoundState,
     markStorySubmitted,
   } = useRoundData({
+    gameType: roomState?.room.game_type ?? null,
     session,
     currentRound,
     onApiError: (error, fallbackMessage) => {
@@ -150,49 +253,16 @@ export default function App() {
       ? roomState.users.find((user) => user.id === session.user_id) ?? null
       : null
   const isHost = currentUser?.is_host ?? session?.isHost ?? false
+  const isThreeLiesRoom = roomState?.room.game_type === 'three-lies-one-truth'
   const hasSubmittedStory = currentRound ? submittedStoryRounds.includes(currentRound.id) : false
+  const hasSubmittedTruthSet = currentRound ? submittedTruthSetRounds.includes(currentRound.id) : false
   const hasVoted = currentRound ? userVote?.round_id === currentRound.id : false
   const phaseEndsIn = currentRound?.phase_ends_at
     ? formatTimeRemaining(currentRound.phase_ends_at, now)
     : 'Sem cronometro'
   const currentRoundLabel = formatRoundLabel(roomState)
   const hasLiveRoom = Boolean(session && roomState)
-  const heroLabel =
-    roomState?.room.status === 'waiting'
-      ? 'Lobby da sala'
-      : roomState?.room.status === 'paused'
-        ? 'Rodada pausada'
-        : currentRound?.status === 'writing'
-          ? 'Fase de escrita'
-          : currentRound?.status === 'voting'
-            ? 'Fase de votacao'
-            : currentRound?.status === 'revealed'
-              ? 'Revelacao'
-              : 'TellYourStory'
-  const heroTitle =
-    roomState?.room.status === 'waiting'
-      ? 'Aguardando participantes.'
-      : roomState?.room.status === 'paused'
-        ? 'Segure o ritmo e retome quando quiser.'
-        : currentRound?.status === 'writing'
-          ? 'Escreva a melhor historia.'
-          : currentRound?.status === 'voting'
-            ? 'Vote na melhor historia!'
-            : currentRound?.status === 'revealed'
-              ? 'E o vencedor e...'
-              : 'Sua sala esta pronta.'
-  const heroDescription =
-    roomState?.room.status === 'waiting'
-      ? 'Monte o grupo, compartilhe o codigo e inicie quando todos estiverem prontos.'
-      : roomState?.room.status === 'paused'
-        ? 'A rodada esta em pausa e o estado atual segue preservado.'
-        : currentRound?.status === 'writing'
-          ? 'Use o bloco principal para contar sua narrativa antes do tempo acabar.'
-          : currentRound?.status === 'voting'
-            ? 'As historias aparecem como cards de votacao. Escolha a sua favorita.'
-            : currentRound?.status === 'revealed'
-              ? 'Confira o destaque da rodada e prepare o proximo tema.'
-              : 'Acompanhe o estado da sala, participantes e feed em tempo real.'
+  const heroCopy = getHeroCopy(roomState)
   const surfaceNotice =
     notice ??
     (busyAction === 'restore-room' && session && !roomState
@@ -240,6 +310,17 @@ export default function App() {
       window.clearInterval(interval)
     }
   }, [])
+
+  useEffect(() => {
+    if (!session) {
+      setSubmittedTruthSetRounds([])
+      setTruthSetForm(initialTruthSetForm)
+    }
+  }, [session?.roomCode, session?.user_id])
+
+  useEffect(() => {
+    setTruthSetForm(initialTruthSetForm)
+  }, [currentRound?.id, roomState?.room.game_type])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -327,11 +408,14 @@ export default function App() {
       const state = await createRoom({
         host_nickname: createForm.hostNickname,
         host_avatar_url: createForm.hostAvatarUrl,
+        game_type: createForm.gameType,
         max_rounds: createForm.maxRounds,
         time_per_round: createForm.timePerRound,
       })
 
       clearAllRoundState()
+      setSubmittedTruthSetRounds([])
+      setTruthSetForm(initialTruthSetForm)
       setSession(sessionFromRoomState(state))
       setRoomState(state)
       setCreatedRoomCode(state.room.code)
@@ -358,6 +442,8 @@ export default function App() {
       })
 
       clearAllRoundState()
+      setSubmittedTruthSetRounds([])
+      setTruthSetForm(initialTruthSetForm)
       setSession(sessionFromRoomState(state))
       setRoomState(state)
       setJoinForm(initialJoinForm)
@@ -455,6 +541,36 @@ export default function App() {
       }
 
       handleApiError(error, 'Nao foi possivel enviar a historia.')
+    } finally {
+      setBusyAction(null)
+    }
+  }
+
+  async function onSubmitTruthSet(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!session || !currentRound || truthSetForm.trueStatementIndex === null) {
+      return
+    }
+
+    resetFeedback()
+    setBusyAction('submit-truth-set')
+
+    try {
+      await submitTruthSet({
+        round_id: currentRound.id,
+        user_id: session.user_id,
+        session_token: session.session_token,
+        statements: truthSetForm.statements,
+        true_statement_index: truthSetForm.trueStatementIndex,
+      })
+
+      setSubmittedTruthSetRounds((current) =>
+        current.includes(currentRound.id) ? current : [...current, currentRound.id],
+      )
+      setNotice(hasSubmittedTruthSet ? 'Afirmacoes atualizadas com sucesso.' : 'Afirmacoes enviadas com sucesso.')
+      pushActivity(hasSubmittedTruthSet ? 'Suas afirmacoes foram atualizadas.' : 'Suas afirmacoes foram enviadas.')
+    } catch (error: unknown) {
+      handleApiError(error, 'Nao foi possivel enviar as afirmacoes.')
     } finally {
       setBusyAction(null)
     }
@@ -588,29 +704,33 @@ export default function App() {
                 }}
               />
 
-              <aside className="rules-panel">
-                <div className="panel-header">
-                  <span>Regras rapidas</span>
-                  <strong>Como funciona</strong>
-                </div>
-                <div className="rules-list">
-                  <article className="rule-card">
-                    <span>01</span>
-                    <strong>Todo mundo entra na mesma sala.</strong>
-                    <p>O host cria a sala e compartilha o codigo com o grupo.</p>
-                  </article>
-                  <article className="rule-card">
-                    <span>02</span>
-                    <strong>Cada rodada tem escrita, voto e revelacao.</strong>
-                    <p>Voce escreve sua historia, vota na favorita e espera o resultado.</p>
-                  </article>
-                  <article className="rule-card">
-                    <span>03</span>
-                    <strong>Ganha a historia que conquistar mais votos.</strong>
-                    <p>O host avanca as fases e pode iniciar a proxima rodada quando quiser.</p>
-                  </article>
-                </div>
-              </aside>
+              {entryMode === 'create' && createForm.gameType === 'three-lies-one-truth' ? (
+                <ThreeLiesRulesPanel title="Three Lies, One Truth" heading="Regras rapidas" />
+              ) : (
+                <aside className="rules-panel">
+                  <div className="panel-header">
+                    <span>Regras rapidas</span>
+                    <strong>Como funciona</strong>
+                  </div>
+                  <div className="rules-list">
+                    <article className="rule-card">
+                      <span>01</span>
+                      <strong>Todo mundo entra na mesma sala.</strong>
+                      <p>O host cria a sala e compartilha o codigo com o grupo.</p>
+                    </article>
+                    <article className="rule-card">
+                      <span>02</span>
+                      <strong>Cada rodada tem escrita, voto e revelacao.</strong>
+                      <p>Voce escreve sua historia, vota na favorita e espera o resultado.</p>
+                    </article>
+                    <article className="rule-card">
+                      <span>03</span>
+                      <strong>Ganha a historia que conquistar mais votos.</strong>
+                      <p>O host avanca as fases e pode iniciar a proxima rodada quando quiser.</p>
+                    </article>
+                  </div>
+                </aside>
+              )}
             </div>
           </section>
 
@@ -700,9 +820,9 @@ export default function App() {
 
         <section className="hero-panel">
           <div>
-            <p className="eyebrow">{heroLabel}</p>
-            <h1>{heroTitle}</h1>
-            <p>{heroDescription}</p>
+            <p className="eyebrow">{heroCopy.label}</p>
+            <h1>{heroCopy.title}</h1>
+            <p>{heroCopy.description}</p>
           </div>
           <div className="hero-stats">
             <div className="hero-stat">
@@ -722,7 +842,29 @@ export default function App() {
 
         <section className="game-grid">
           <div className="game-primary-column">
-            {roomState?.room.status === 'waiting' || !currentRound ? (
+            {isThreeLiesRoom && roomState ? (
+              <ThreeLiesGamePanel
+                roomState={roomState}
+                currentUserId={session?.user_id}
+                currentRoundLabel={currentRoundLabel}
+                phaseEndsIn={phaseEndsIn}
+                truthSetForm={truthSetForm}
+                busyAction={busyAction}
+                hasSubmittedTruthSet={hasSubmittedTruthSet}
+                onStatementChange={(index, value) => {
+                  setTruthSetForm((current) => ({
+                    ...current,
+                    statements: current.statements.map((statement, statementIndex) =>
+                      statementIndex === index ? value : statement,
+                    ),
+                  }))
+                }}
+                onTrueStatementChange={(index) => {
+                  setTruthSetForm((current) => ({ ...current, trueStatementIndex: index }))
+                }}
+                onSubmitTruthSet={onSubmitTruthSet}
+              />
+            ) : roomState?.room.status === 'waiting' || !currentRound ? (
               <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />
             ) : (
               <RoundPanel

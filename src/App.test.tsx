@@ -17,6 +17,7 @@ const {
   pauseRoomMock,
   startRoomMock,
   submitStoryMock,
+  submitTruthSetMock,
   submitVoteMock,
   getUserVoteMock,
   loadSessionMock,
@@ -48,6 +49,7 @@ const {
     pauseRoomMock: vi.fn(),
     startRoomMock: vi.fn(),
     submitStoryMock: vi.fn(),
+    submitTruthSetMock: vi.fn(),
     submitVoteMock: vi.fn(),
     getUserVoteMock: vi.fn(),
     loadSessionMock: vi.fn(),
@@ -83,6 +85,7 @@ vi.mock('./api', () => ({
   },
   startRoom: startRoomMock,
   submitStory: submitStoryMock,
+  submitTruthSet: submitTruthSetMock,
   submitVote: submitVoteMock,
 }))
 
@@ -98,6 +101,7 @@ function buildRoomState(overrides?: Partial<RoomState>): RoomState {
       id: 'room-1',
       code: 'ABCD12',
       host_id: 'user-1',
+      game_type: 'tell-your-story',
       max_rounds: 3,
       time_per_round: 120,
       status: 'waiting',
@@ -187,6 +191,7 @@ describe('App', () => {
     pauseRoomMock.mockReset()
     startRoomMock.mockReset()
     submitStoryMock.mockReset()
+    submitTruthSetMock.mockReset()
     submitVoteMock.mockReset()
     getUserVoteMock.mockReset()
     saveSessionMock.mockReset()
@@ -204,13 +209,14 @@ describe('App', () => {
       throw new Error('Create form not found')
     }
 
-    fireEvent.change(within(createForm).getByLabelText('Seu nome'), { target: { value: 'Ricardo' } })
+    fireEvent.change(within(createForm).getByLabelText('Nickname'), { target: { value: 'Ricardo' } })
     fireEvent.click(within(createForm).getByRole('button', { name: 'Criar sala' }))
 
     await waitFor(() => {
       expect(createRoomMock).toHaveBeenCalledWith({
         host_nickname: 'Ricardo',
         host_avatar_url: defaultAvatarUrl,
+        game_type: 'tell-your-story',
         max_rounds: 3,
         time_per_round: 120,
       })
@@ -221,6 +227,38 @@ describe('App', () => {
     expect(within(shareDialog).getByRole('button', { name: 'Copiar codigo' })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Iniciar jogo' })).toBeInTheDocument()
     expect(saveSessionMock).toHaveBeenCalled()
+  })
+
+  it('cria uma sala em three-lies-one-truth com o game_type correto', async () => {
+    createRoomMock.mockResolvedValue(
+      buildAuthenticatedRoomState({
+        room: {
+          ...buildRoomState().room,
+          game_type: 'three-lies-one-truth',
+        },
+      }),
+    )
+
+    render(<App />)
+
+    const createForm = screen.getByRole('heading', { name: 'Criar sala' }).closest('form')
+    if (!createForm) {
+      throw new Error('Create form not found')
+    }
+
+    fireEvent.change(within(createForm).getByLabelText('Nickname'), { target: { value: 'Ricardo' } })
+    fireEvent.click(within(createForm).getByRole('button', { name: /Three Lies, One Truth/i }))
+    fireEvent.click(within(createForm).getByRole('button', { name: 'Criar sala' }))
+
+    await waitFor(() => {
+      expect(createRoomMock).toHaveBeenCalledWith({
+        host_nickname: 'Ricardo',
+        host_avatar_url: defaultAvatarUrl,
+        game_type: 'three-lies-one-truth',
+        max_rounds: 3,
+        time_per_round: 120,
+      })
+    })
   })
 
   it('entra em uma sala usando o codigo em uppercase', async () => {
@@ -278,6 +316,7 @@ describe('App', () => {
           room_id: 'room-1',
           round_number: 1,
           status: 'voting',
+          active_truth_set_id: null,
           started_at: '2026-03-27T10:00:00Z',
           phase_ends_at: '2026-03-27T10:02:00Z',
           paused_at: null,
@@ -320,6 +359,7 @@ describe('App', () => {
           room_id: 'room-1',
           round_number: 1,
           status: 'revealed',
+          active_truth_set_id: null,
           started_at: '2026-03-27T10:00:00Z',
           phase_ends_at: null,
           paused_at: null,
@@ -368,5 +408,66 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Entrar em sala' })).toHaveClass('active')
     expect(screen.getByDisplayValue('ABCD12')).toBeInTheDocument()
     expect(clearSessionMock).toHaveBeenCalled()
+  })
+
+  it('renderiza o writing de three-lies-one-truth e envia afirmacoes', async () => {
+    loadSessionMock.mockReturnValue(buildSession())
+    getRoomMock.mockResolvedValue(
+      buildRoomState({
+        room: {
+          ...buildRoomState().room,
+          game_type: 'three-lies-one-truth',
+          status: 'active',
+        },
+        current_round: {
+          id: 'round-1',
+          room_id: 'room-1',
+          round_number: 1,
+          status: 'writing',
+          active_truth_set_id: null,
+          started_at: '2026-03-27T10:00:00Z',
+          phase_ends_at: '2026-03-27T10:02:00Z',
+          paused_at: null,
+          completed_at: null,
+        },
+      }),
+    )
+    submitTruthSetMock.mockResolvedValue({
+      id: 'truth-set-1',
+      room_id: 'room-1',
+      round_id: 'round-1',
+      author_user_id: 'user-1',
+      presentation_order: 0,
+      true_statement_index: 2,
+      created_at: '2026-03-27T10:00:30Z',
+      updated_at: '2026-03-27T10:00:30Z',
+      statements: [
+        { id: 'ts-1', truth_set_id: 'truth-set-1', statement_index: 1, content: 'A', created_at: '', updated_at: '' },
+        { id: 'ts-2', truth_set_id: 'truth-set-1', statement_index: 2, content: 'B', created_at: '', updated_at: '' },
+        { id: 'ts-3', truth_set_id: 'truth-set-1', statement_index: 3, content: 'C', created_at: '', updated_at: '' },
+        { id: 'ts-4', truth_set_id: 'truth-set-1', statement_index: 4, content: 'D', created_at: '', updated_at: '' },
+      ],
+    })
+
+    render(<App />)
+
+    expect(await screen.findByText('Escreva 4 afirmacoes e esconda a verdade.')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByPlaceholderText('Escreva a afirmacao 1'), { target: { value: 'A' } })
+    fireEvent.change(screen.getByPlaceholderText('Escreva a afirmacao 2'), { target: { value: 'B' } })
+    fireEvent.change(screen.getByPlaceholderText('Escreva a afirmacao 3'), { target: { value: 'C' } })
+    fireEvent.change(screen.getByPlaceholderText('Escreva a afirmacao 4'), { target: { value: 'D' } })
+    fireEvent.click(screen.getAllByRole('radio')[1])
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar afirmacoes' }))
+
+    await waitFor(() => {
+      expect(submitTruthSetMock).toHaveBeenCalledWith({
+        round_id: 'round-1',
+        user_id: 'user-1',
+        session_token: 'token-123',
+        statements: ['A', 'B', 'C', 'D'],
+        true_statement_index: 2,
+      })
+    })
   })
 })

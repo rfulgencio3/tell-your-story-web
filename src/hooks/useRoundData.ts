@@ -1,6 +1,7 @@
 import { startTransition, useEffect, useEffectEvent, useState } from 'react'
 import { ApiError, getTopStory, getUserVote, listStories, listVotes } from '../api'
 import type {
+  GameType,
   ProgressPayload,
   Round,
   SessionState,
@@ -11,12 +12,13 @@ import type {
 } from '../types'
 
 interface UseRoundDataParams {
+  gameType: GameType | null
   session: SessionState | null
   currentRound: Round | null
   onApiError: (error: unknown, fallbackMessage: string) => void
 }
 
-export function useRoundData({ session, currentRound, onApiError }: UseRoundDataParams) {
+export function useRoundData({ gameType, session, currentRound, onApiError }: UseRoundDataParams) {
   const [storyCards, setStoryCards] = useState<StoryCard[]>([])
   const [voteSummaries, setVoteSummaries] = useState<VoteSummary[]>([])
   const [userVote, setUserVote] = useState<UserVote | null>(null)
@@ -47,6 +49,11 @@ export function useRoundData({ session, currentRound, onApiError }: UseRoundData
   useEffect(() => {
     if (!session) {
       clearAllRoundState()
+      return
+    }
+
+    if (gameType !== 'tell-your-story') {
+      clearRoundData()
       return
     }
 
@@ -99,10 +106,10 @@ export function useRoundData({ session, currentRound, onApiError }: UseRoundData
     return () => {
       cancelled = true
     }
-  }, [currentRound?.id, currentRound?.status, session?.user_id, session?.session_token])
+  }, [currentRound?.id, currentRound?.status, gameType, session?.user_id, session?.session_token])
 
   useEffect(() => {
-    if (!currentRound || currentRound.status !== 'revealed' || topStory) {
+    if (gameType !== 'tell-your-story' || !currentRound || currentRound.status !== 'revealed' || topStory) {
       return
     }
 
@@ -123,7 +130,7 @@ export function useRoundData({ session, currentRound, onApiError }: UseRoundData
     return () => {
       cancelled = true
     }
-  }, [currentRound?.id, currentRound?.status, topStory?.story.id])
+  }, [currentRound?.id, currentRound?.status, gameType, topStory?.story.id])
 
   return {
     storyCards,

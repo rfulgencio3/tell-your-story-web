@@ -52,6 +52,8 @@ export function RoomPanel({
 }: RoomPanelProps) {
   const roomStatus = roomState?.room.status ?? 'waiting'
   const roundStatus = roomState?.current_round?.status ?? null
+  const gameType = roomState?.room.game_type ?? 'tell-your-story'
+  const isThreeLies = gameType === 'three-lies-one-truth'
   const actionLabel =
     roundStatus === 'writing'
       ? 'Avancar para votacao'
@@ -75,18 +77,34 @@ export function RoomPanel({
           ? 'A partida terminou. Voce pode criar uma nova sala para jogar de novo.'
           : roomStatus === 'expired'
             ? 'A sala expirou. Entre novamente com um codigo valido.'
+            : isThreeLies && roundStatus === 'countdown'
+              ? isHost
+                ? 'A contagem inicial esta rodando. A fase de escrita abre automaticamente para o grupo.'
+                : 'A partida vai abrir a fase de escrita assim que a contagem terminar.'
             : roundStatus === 'writing'
               ? isHost
-                ? 'Acompanhe o progresso das historias e avance para votacao quando fizer sentido.'
-                : 'Escreva e envie sua historia antes do encerramento da fase.'
+                ? isThreeLies
+                  ? 'Todo mundo escreve 4 afirmacoes agora. A sala entra na votacao automaticamente quando o tempo acabar.'
+                  : 'Acompanhe o progresso das historias e avance para votacao quando fizer sentido.'
+                : isThreeLies
+                  ? 'Escreva 4 afirmacoes e marque a unica verdade antes do encerramento da fase.'
+                  : 'Escreva e envie sua historia antes do encerramento da fase.'
               : roundStatus === 'voting'
                 ? isHost
                   ? 'Observe a contagem de votos e avance para revelacao quando o grupo terminar.'
                   : 'Escolha uma historia para votar antes do fim do tempo.'
+                : roundStatus === 'presentation_voting'
+                  ? isHost
+                    ? 'A sala esta exibindo um conjunto de afirmacoes e vai avancar sozinha entre voto, reveal e commentary.'
+                    : 'Acompanhe a apresentacao atual e vote antes do cronometro zerar.'
                 : roundStatus === 'revealed'
                   ? isHost
                     ? 'Confira a vencedora e avance para a proxima rodada quando quiser.'
                     : 'Confira a historia vencedora e aguarde a proxima rodada.'
+                  : roundStatus === 'reveal'
+                    ? 'A resposta correta esta sendo exibida antes da janela de comentario.'
+                    : roundStatus === 'commentary'
+                      ? 'O comentario do autor esta em andamento e a sala segue automaticamente.'
                   : 'A sala esta sincronizada e pronta para continuar.'
 
   return (
@@ -145,7 +163,7 @@ export function RoomPanel({
                 Pausar
               </button>
             ) : null}
-            {isHost && roomState.current_round ? (
+            {isHost && roomState.current_round && !isThreeLies ? (
               <button
                 type="button"
                 className="secondary flow-action"
@@ -155,7 +173,7 @@ export function RoomPanel({
                 {actionLabel}
               </button>
             ) : null}
-            {isHost && roomState.current_round?.status === 'revealed' ? (
+            {isHost && roomState.current_round?.status === 'revealed' && !isThreeLies ? (
               <button
                 type="button"
                 className="secondary flow-action"
