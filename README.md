@@ -100,10 +100,3 @@ npm test
 3. frontend sincroniza com a API via HTTP
 4. frontend assina atualizações em tempo real via WebSocket
 5. a interface renderiza o estado autoritativo da sala
-
-## Documentação complementar
-
-Especificações do modo `three-lies-one-truth`:
-
-- `C:\projects\tell-your-story\docs\THREE-LIES-ONE-TRUTH_GHERKIN_API.md`
-- `C:\projects\tell-your-story\docs\THREE-LIES-ONE-TRUTH_GHERKIN_WEB.md`
