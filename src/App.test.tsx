@@ -18,6 +18,7 @@ const {
   startRoomMock,
   submitStoryMock,
   submitTruthSetMock,
+  submitTruthSetVoteMock,
   submitVoteMock,
   getUserVoteMock,
   loadSessionMock,
@@ -50,6 +51,7 @@ const {
     startRoomMock: vi.fn(),
     submitStoryMock: vi.fn(),
     submitTruthSetMock: vi.fn(),
+    submitTruthSetVoteMock: vi.fn(),
     submitVoteMock: vi.fn(),
     getUserVoteMock: vi.fn(),
     loadSessionMock: vi.fn(),
@@ -86,6 +88,7 @@ vi.mock('./api', () => ({
   startRoom: startRoomMock,
   submitStory: submitStoryMock,
   submitTruthSet: submitTruthSetMock,
+  submitTruthSetVote: submitTruthSetVoteMock,
   submitVote: submitVoteMock,
 }))
 
@@ -192,6 +195,7 @@ describe('App', () => {
     startRoomMock.mockReset()
     submitStoryMock.mockReset()
     submitTruthSetMock.mockReset()
+    submitTruthSetVoteMock.mockReset()
     submitVoteMock.mockReset()
     getUserVoteMock.mockReset()
     saveSessionMock.mockReset()
@@ -469,5 +473,127 @@ describe('App', () => {
         true_statement_index: 2,
       })
     })
+  })
+
+  it('renderiza presentation_voting e envia o voto no three-lies-one-truth', async () => {
+    loadSessionMock.mockReturnValue(buildSession())
+    getRoomMock.mockResolvedValue(
+      buildRoomState({
+        room: {
+          ...buildRoomState().room,
+          game_type: 'three-lies-one-truth',
+          status: 'active',
+        },
+        current_round: {
+          id: 'round-1',
+          room_id: 'room-1',
+          round_number: 1,
+          status: 'presentation_voting',
+          active_truth_set_id: 'truth-set-1',
+          started_at: '2026-03-27T10:00:00Z',
+          phase_ends_at: '2026-03-27T10:02:00Z',
+          paused_at: null,
+          completed_at: null,
+        },
+        three_lies: {
+          active_truth_set: {
+            id: 'truth-set-1',
+            room_id: 'room-1',
+            round_id: 'round-1',
+            author_user_id: 'user-2',
+            presentation_order: 1,
+            true_statement_index: 3,
+            created_at: '2026-03-27T10:00:30Z',
+            updated_at: '2026-03-27T10:00:30Z',
+            statements: [
+              { id: 'ts-1', truth_set_id: 'truth-set-1', statement_index: 1, content: 'A', created_at: '', updated_at: '' },
+              { id: 'ts-2', truth_set_id: 'truth-set-1', statement_index: 2, content: 'B', created_at: '', updated_at: '' },
+              { id: 'ts-3', truth_set_id: 'truth-set-1', statement_index: 3, content: 'C', created_at: '', updated_at: '' },
+              { id: 'ts-4', truth_set_id: 'truth-set-1', statement_index: 4, content: 'D', created_at: '', updated_at: '' },
+            ],
+          },
+          voting_progress: {
+            eligible_voters: 1,
+            submitted_votes: 0,
+          },
+        },
+      }),
+    )
+    submitTruthSetVoteMock.mockResolvedValue({
+      id: 'vote-1',
+      room_id: 'room-1',
+      round_id: 'round-1',
+      truth_set_id: 'truth-set-1',
+      user_id: 'user-1',
+      selected_statement_index: 3,
+      created_at: '2026-03-27T10:01:00Z',
+      updated_at: '2026-03-27T10:01:00Z',
+    })
+
+    render(<App />)
+
+    expect(await screen.findByText('Uma pessoa conta quatro versoes da mesma historia.')).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Marcar como verdade' })[2])
+
+    await waitFor(() => {
+      expect(submitTruthSetVoteMock).toHaveBeenCalledWith({
+        round_id: 'round-1',
+        user_id: 'user-1',
+        session_token: 'token-123',
+        truth_set_id: 'truth-set-1',
+        selected_statement_index: 3,
+      })
+    })
+  })
+
+  it('bloqueia o voto quando o usuario e o autor da apresentacao atual', async () => {
+    loadSessionMock.mockReturnValue(buildSession())
+    getRoomMock.mockResolvedValue(
+      buildRoomState({
+        room: {
+          ...buildRoomState().room,
+          game_type: 'three-lies-one-truth',
+          status: 'active',
+        },
+        current_round: {
+          id: 'round-1',
+          room_id: 'room-1',
+          round_number: 1,
+          status: 'presentation_voting',
+          active_truth_set_id: 'truth-set-1',
+          started_at: '2026-03-27T10:00:00Z',
+          phase_ends_at: '2026-03-27T10:02:00Z',
+          paused_at: null,
+          completed_at: null,
+        },
+        three_lies: {
+          active_truth_set: {
+            id: 'truth-set-1',
+            room_id: 'room-1',
+            round_id: 'round-1',
+            author_user_id: 'user-1',
+            presentation_order: 1,
+            true_statement_index: 3,
+            created_at: '2026-03-27T10:00:30Z',
+            updated_at: '2026-03-27T10:00:30Z',
+            statements: [
+              { id: 'ts-1', truth_set_id: 'truth-set-1', statement_index: 1, content: 'A', created_at: '', updated_at: '' },
+              { id: 'ts-2', truth_set_id: 'truth-set-1', statement_index: 2, content: 'B', created_at: '', updated_at: '' },
+              { id: 'ts-3', truth_set_id: 'truth-set-1', statement_index: 3, content: 'C', created_at: '', updated_at: '' },
+              { id: 'ts-4', truth_set_id: 'truth-set-1', statement_index: 4, content: 'D', created_at: '', updated_at: '' },
+            ],
+          },
+          voting_progress: {
+            eligible_voters: 1,
+            submitted_votes: 0,
+          },
+        },
+      }),
+    )
+
+    render(<App />)
+
+    expect(await screen.findByText('Voce e o autor dessa historia, aguarde a votacao dos outros jogadores.')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Bloqueado para o autor' })[0]).toBeDisabled()
   })
 })

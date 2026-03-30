@@ -1488,6 +1488,78 @@ button.ghost {
   color: #5b2bbf;
 }
 
+.three-lies-voting-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.three-lies-progress-card {
+  padding: 22px 24px;
+  border-radius: 28px;
+  border: 3px solid rgba(112, 42, 225, 0.14);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.three-lies-progress-card span {
+  display: block;
+  color: #6f7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.three-lies-progress-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 2rem;
+  letter-spacing: -0.05em;
+}
+
+.three-lies-author-card,
+.three-lies-commentary-callout,
+.three-lies-reveal-highlight {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: #eef4ff;
+  border: 2px solid rgba(112, 42, 225, 0.14);
+}
+
+.three-lies-author-card.current-author {
+  background: rgba(252, 192, 37, 0.16);
+  border-color: rgba(117, 86, 0, 0.24);
+}
+
+.three-lies-author-card span,
+.three-lies-commentary-callout span,
+.three-lies-reveal-highlight span {
+  display: block;
+  color: #6f7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.three-lies-author-card strong,
+.three-lies-commentary-callout strong,
+.three-lies-reveal-highlight strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.three-lies-author-card p,
+.three-lies-commentary-callout p,
+.three-lies-reveal-highlight p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
 .three-lies-writing-form {
   display: grid;
   gap: 18px;
@@ -1575,6 +1647,128 @@ button.ghost {
 .three-lies-save-note p {
   margin: 6px 0 0;
   color: var(--muted);
+}
+
+.three-lies-vote-option {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 2px solid rgba(109, 119, 136, 0.22);
+  background: #fbfcff;
+}
+
+.three-lies-vote-option.selected {
+  border-color: rgba(112, 42, 225, 0.45);
+  background: #f3ecff;
+}
+
+.three-lies-vote-option.locked {
+  opacity: 0.82;
+}
+
+.three-lies-vote-option p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.three-lies-reveal-votes,
+.three-lies-ranking-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.three-lies-reveal-vote,
+.three-lies-ranking-entry {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 2px solid rgba(109, 119, 136, 0.16);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.three-lies-reveal-vote.correct {
+  border-color: rgba(16, 185, 129, 0.32);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.three-lies-reveal-vote.wrong {
+  border-color: rgba(180, 19, 64, 0.18);
+  background: rgba(180, 19, 64, 0.06);
+}
+
+.three-lies-reveal-vote span,
+.three-lies-ranking-entry strong {
+  color: #6f7a8d;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.three-lies-reveal-vote strong {
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.three-lies-reveal-vote p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.three-lies-ranking-entry {
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.three-lies-ranking-position {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: rgba(252, 192, 37, 0.2);
+  border: 3px solid rgba(117, 86, 0, 0.24);
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.three-lies-ranking-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.three-lies-ranking-user img,
+.three-lies-ranking-user span {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #eef4ff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: var(--panel-violet);
+}
+
+.three-lies-ranking-user strong {
+  display: block;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: -0.02em;
+  font-size: 1rem;
+}
+
+.three-lies-ranking-score {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--panel-violet);
 }
 
 .feed-panel {
@@ -1730,6 +1924,16 @@ button.ghost {
   .showcase-card-foot {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .three-lies-voting-overview,
+  .three-lies-ranking-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .three-lies-ranking-position {
+    width: 64px;
+    height: 64px;
   }
 
   .game-topbar-meta {

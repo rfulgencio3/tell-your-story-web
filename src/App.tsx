@@ -13,6 +13,7 @@ import {
   startRoom,
   submitStory,
   submitTruthSet,
+  submitTruthSetVote,
   submitVote,
 } from './api'
 import { ActivityPanel } from './components/ActivityPanel'
@@ -121,6 +122,38 @@ function getHeroCopy(roomState: RoomState | null) {
       }
     }
 
+    if (roundStatus === 'presentation_voting') {
+      return {
+        label: 'Presentation Voting',
+        title: 'Uma pessoa conta quatro versoes da mesma historia.',
+        description: 'Leia as afirmacoes, marque a verdade e ajuste seu voto enquanto o cronometro estiver aberto.',
+      }
+    }
+
+    if (roundStatus === 'reveal') {
+      return {
+        label: 'Reveal',
+        title: 'A verdade apareceu para a sala inteira.',
+        description: 'Agora o grupo ve quem acertou e quem caiu em uma mentira antes do comentario do autor.',
+      }
+    }
+
+    if (roundStatus === 'commentary') {
+      return {
+        label: 'Commentary',
+        title: 'O autor tem alguns segundos para comentar.',
+        description: 'A janela de comentario fecha sozinha e a sala segue para a proxima apresentacao ou rodada.',
+      }
+    }
+
+    if (roomStatus === 'finished') {
+      return {
+        label: 'Ranking final',
+        title: 'A partida terminou e o placar ficou definido.',
+        description: 'Agora a sala mostra apenas a classificacao final com posicoes compartilhadas em caso de empate.',
+      }
+    }
+
     return {
       label: 'Three Lies, One Truth',
       title: 'O modo novo esta em andamento.',
@@ -178,6 +211,7 @@ export default function App() {
   const [storyForm, setStoryForm] = useState(initialStoryForm)
   const [truthSetForm, setTruthSetForm] = useState(initialTruthSetForm)
   const [submittedTruthSetRounds, setSubmittedTruthSetRounds] = useState<string[]>([])
+  const [truthSetVoteSelections, setTruthSetVoteSelections] = useState<Record<string, number>>({})
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null)
   const [busyAction, setBusyAction] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -256,6 +290,8 @@ export default function App() {
   const isThreeLiesRoom = roomState?.room.game_type === 'three-lies-one-truth'
   const hasSubmittedStory = currentRound ? submittedStoryRounds.includes(currentRound.id) : false
   const hasSubmittedTruthSet = currentRound ? submittedTruthSetRounds.includes(currentRound.id) : false
+  const activeTruthSetId = roomState?.three_lies?.active_truth_set?.id ?? null
+  const selectedTruthSetVote = activeTruthSetId ? truthSetVoteSelections[activeTruthSetId] ?? null : null
   const hasVoted = currentRound ? userVote?.round_id === currentRound.id : false
   const phaseEndsIn = currentRound?.phase_ends_at
     ? formatTimeRemaining(currentRound.phase_ends_at, now)
@@ -315,6 +351,7 @@ export default function App() {
     if (!session) {
       setSubmittedTruthSetRounds([])
       setTruthSetForm(initialTruthSetForm)
+      setTruthSetVoteSelections({})
     }
   }, [session?.roomCode, session?.user_id])
 
@@ -416,6 +453,7 @@ export default function App() {
       clearAllRoundState()
       setSubmittedTruthSetRounds([])
       setTruthSetForm(initialTruthSetForm)
+      setTruthSetVoteSelections({})
       setSession(sessionFromRoomState(state))
       setRoomState(state)
       setCreatedRoomCode(state.room.code)
@@ -444,6 +482,7 @@ export default function App() {
       clearAllRoundState()
       setSubmittedTruthSetRounds([])
       setTruthSetForm(initialTruthSetForm)
+      setTruthSetVoteSelections({})
       setSession(sessionFromRoomState(state))
       setRoomState(state)
       setJoinForm(initialJoinForm)
@@ -602,6 +641,36 @@ export default function App() {
       pushActivity('Seu voto foi enviado.')
     } catch (error: unknown) {
       handleApiError(error, 'Nao foi possivel registrar o voto.')
+    } finally {
+      setBusyAction(null)
+    }
+  }
+
+  async function onTruthSetVote(statementIndex: number) {
+    if (!session || !currentRound || !roomState?.three_lies?.active_truth_set) {
+      return
+    }
+
+    resetFeedback()
+    setBusyAction(`vote-truth-set-${statementIndex}`)
+
+    try {
+      const vote = await submitTruthSetVote({
+        round_id: currentRound.id,
+        user_id: session.user_id,
+        session_token: session.session_token,
+        truth_set_id: roomState.three_lies.active_truth_set.id,
+        selected_statement_index: statementIndex,
+      })
+
+      setTruthSetVoteSelections((current) => ({
+        ...current,
+        [vote.truth_set_id]: vote.selected_statement_index,
+      }))
+      setNotice('Voto registrado com sucesso.')
+      pushActivity('Seu voto na rodada atual foi salvo.')
+    } catch (error: unknown) {
+      handleApiError(error, 'Nao foi possivel registrar o voto nesta apresentacao.')
     } finally {
       setBusyAction(null)
     }
@@ -851,6 +920,7 @@ export default function App() {
                 truthSetForm={truthSetForm}
                 busyAction={busyAction}
                 hasSubmittedTruthSet={hasSubmittedTruthSet}
+                selectedStatementIndex={selectedTruthSetVote}
                 onStatementChange={(index, value) => {
                   setTruthSetForm((current) => ({
                     ...current,
@@ -863,6 +933,7 @@ export default function App() {
                   setTruthSetForm((current) => ({ ...current, trueStatementIndex: index }))
                 }}
                 onSubmitTruthSet={onSubmitTruthSet}
+                onVote={(statementIndex) => void onTruthSetVote(statementIndex)}
               />
             ) : roomState?.room.status === 'waiting' || !currentRound ? (
               <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />

@@ -82,11 +82,22 @@ export interface ThreeLiesRevealState {
   revealed_votes: ThreeLiesRevealedVote[]
 }
 
+export interface TruthSetVote {
+  id: string
+  room_id: string
+  round_id: string
+  truth_set_id: string
+  user_id: string
+  selected_statement_index: number
+  created_at: string
+  updated_at: string
+}
+
 export interface ThreeLiesRankingEntry {
   position: number
   user_id: string
   nickname: string
-  is_host: boolean
+  avatar_url: string
   score: number
 }
 

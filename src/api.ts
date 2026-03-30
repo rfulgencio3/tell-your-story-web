@@ -7,6 +7,7 @@ import type {
   StoryCard,
   TopStoryResult,
   TruthSet,
+  TruthSetVote,
   UserVote,
   VoteSummary,
 } from './types'
@@ -151,6 +152,16 @@ export function submitTruthSet(input: {
   true_statement_index: number
 }) {
   return request<TruthSet>('/api/three-lies/truth-sets', 'POST', input)
+}
+
+export function submitTruthSetVote(input: {
+  round_id: string
+  user_id: string
+  session_token: string
+  truth_set_id: string
+  selected_statement_index: number
+}) {
+  return request<TruthSetVote>('/api/three-lies/votes', 'POST', input)
 }
 
 export function sessionFromRoomState(state: AuthenticatedRoomState): SessionState {
