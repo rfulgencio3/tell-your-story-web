@@ -73,17 +73,28 @@ export function AuthPanel({
               <h2>Criar sala</h2>
               <span>Host</span>
             </div>
-            <label>
-              <span>Nickname</span>
-              <input
-                value={createForm.hostNickname}
-                onChange={(event) => onCreateFormChange('hostNickname', event.target.value)}
-                placeholder="NickName"
-                required
-              />
-            </label>
-            <fieldset className="game-type-picker">
-              <legend>Modo de jogo</legend>
+
+            <section className="entry-step-card">
+              <div className="entry-step-header">
+                <span>Passo 1</span>
+                <strong>Como o grupo vai te chamar?</strong>
+                <p>Defina primeiro o apelido que aparece na sala e durante toda a partida.</p>
+              </div>
+
+              <label>
+                <span>Nickname</span>
+                <input
+                  value={createForm.hostNickname}
+                  onChange={(event) => onCreateFormChange('hostNickname', event.target.value)}
+                  placeholder="Seu apelido"
+                  required
+                />
+              </label>
+            </section>
+
+            <fieldset className="game-type-picker entry-step-card">
+              <legend>Passo 2 · Escolha o modo de jogo</legend>
+              <p className="entry-step-copy">Depois do apelido, escolha o ritmo da sala antes de configurar avatar e rodada.</p>
               <div className="game-type-picker-grid">
                 <button
                   type="button"
@@ -103,12 +114,20 @@ export function AuthPanel({
                 </button>
               </div>
             </fieldset>
-            <AvatarPicker
-              title="Avatar do host"
-              subtitle="Escolha quem vai representar voce no jogo"
-              selectedAvatarUrl={createForm.hostAvatarUrl}
-              onSelect={(avatarUrl) => onCreateFormChange('hostAvatarUrl', avatarUrl)}
-            />
+
+            <div className="entry-step-card">
+              <div className="entry-step-header compact">
+                <span>Passo 3</span>
+                <strong>Escolha seu avatar e o ritmo da sala</strong>
+              </div>
+
+              <AvatarPicker
+                title="Avatar do host"
+                subtitle="Escolha quem vai representar voce no jogo"
+                selectedAvatarUrl={createForm.hostAvatarUrl}
+                onSelect={(avatarUrl) => onCreateFormChange('hostAvatarUrl', avatarUrl)}
+              />
+
             <div className="inline-fields">
               <label>
                 <span>Rodadas</span>
@@ -130,6 +149,7 @@ export function AuthPanel({
                   onChange={(event) => onCreateFormChange('timePerRound', Number(event.target.value))}
                 />
               </label>
+            </div>
             </div>
             <button type="submit" disabled={busyAction === 'create-room'}>
               {busyAction === 'create-room' ? 'Criando...' : 'Criar sala'}
@@ -155,7 +175,7 @@ export function AuthPanel({
               <input
                 value={joinForm.nickname}
                 onChange={(event) => onJoinFormChange('nickname', event.target.value)}
-                placeholder="NickName"
+                placeholder="Seu apelido"
                 required
               />
             </label>
