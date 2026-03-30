@@ -829,18 +829,18 @@ export default function App() {
             <div className="entry-feature-row">
               <div className="showcase-card showcase-card-primary compact">
                 <div className="showcase-card-badge">Convide rapido</div>
-                <strong>Crie a sala e compartilhe o codigo com o grupo.</strong>
-                <p>Quem receber o codigo entra na mesma sala em poucos segundos.</p>
+                <strong>Crie a sala, escolha o modo e compartilhe o codigo com o grupo.</strong>
+                <p>O grupo entra no mesmo lobby em poucos segundos e acompanha a mesma partida.</p>
               </div>
               <div className="showcase-card showcase-card-secondary compact">
-                <div className="showcase-card-badge">Jogue por fases</div>
-                <strong>Escreva, vote e descubra a vencedora sem sair da sala.</strong>
-                <p>O jogo conduz cada rodada de forma simples e visual.</p>
+                <div className="showcase-card-badge">Mude o ritmo</div>
+                <strong>Escolha o tipo de partida que combina melhor com o grupo.</strong>
+                <p>Cada modo organiza as rodadas com regras claras e uma experiencia visual guiada.</p>
               </div>
               <div className="showcase-card showcase-card-tertiary compact">
                 <div className="showcase-card-badge">Tudo ao vivo</div>
-                <strong>A sala se atualiza automaticamente enquanto o grupo joga.</strong>
-                <p>Entrada, progresso e resultado aparecem em tempo real.</p>
+                <strong>A sala se atualiza automaticamente enquanto todo mundo joga.</strong>
+                <p>Entrada, progresso, transicoes e resultado aparecem em tempo real para o grupo inteiro.</p>
               </div>
             </div>
 
