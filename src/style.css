@@ -1552,9 +1552,9 @@ button.ghost {
   color: #5b2bbf;
 }
 
-.three-lies-voting-overview {
+.three-lies-voting-summary-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   align-items: stretch;
 }
@@ -1604,6 +1604,44 @@ button.ghost {
 .three-lies-author-card.current-author {
   background: rgba(252, 192, 37, 0.16);
   border-color: rgba(117, 86, 0, 0.24);
+}
+
+.three-lies-voting-summary-grid .three-lies-author-card {
+  margin-top: 0;
+}
+
+.three-lies-author-card-layout {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.three-lies-author-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 3px solid rgba(112, 42, 225, 0.24);
+  background: #eef4ff;
+  display: grid;
+  place-items: center;
+}
+
+.three-lies-author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.three-lies-author-avatar span {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--panel-violet);
+}
+
+.three-lies-author-copy {
+  min-width: 0;
 }
 
 .three-lies-author-card span,
@@ -2009,7 +2047,7 @@ button.ghost {
     display: grid;
   }
 
-  .three-lies-voting-overview,
+  .three-lies-voting-summary-grid,
   .three-lies-ranking-entry {
     grid-template-columns: 1fr;
   }

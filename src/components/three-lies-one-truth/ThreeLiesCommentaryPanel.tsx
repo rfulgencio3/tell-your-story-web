@@ -13,16 +13,14 @@ interface ThreeLiesCommentaryPanelProps {
 
 export function ThreeLiesCommentaryPanel({
   roundLabel,
-  phaseEndsIn,
-  phaseSecondsLeft,
   reveal,
   author,
   isHost,
   busyAction,
   onAdvance,
 }: ThreeLiesCommentaryPanelProps) {
-  const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
   const isAdvancing = busyAction === 'advance'
+  const authorName = author?.nickname?.trim() ? author.nickname : null
 
   return (
     <article className="panel three-lies-panel three-lies-commentary-panel">
@@ -33,15 +31,10 @@ export function ThreeLiesCommentaryPanel({
 
       <div className="three-lies-phase-hero">
         <p className="eyebrow">Janela do autor</p>
-        <h2>{author ? `${author.nickname} tem a palavra.` : 'O autor da rodada tem a palavra.'}</h2>
+        <h2>{authorName ? `${authorName} tem a palavra.` : 'O autor da rodada tem a palavra.'}</h2>
         <p>
           O comentario pode durar ate 1 minuto. O host pode avancar antes para a proxima historia quando o grupo estiver pronto.
         </p>
-      </div>
-
-      <div className={`three-lies-timer-card subtle${isUrgent ? ' urgent' : ''}`}>
-        <span>Comentario termina em</span>
-        <strong>{phaseEndsIn}</strong>
       </div>
 
       <section className="three-lies-commentary-callout">

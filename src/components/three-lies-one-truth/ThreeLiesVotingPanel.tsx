@@ -1,4 +1,5 @@
 import type { PresentedTruthSet, User } from '../../types'
+import { normalizeAvatarUrl } from '../../lib/avatar-options'
 
 interface ThreeLiesVotingPanelProps {
   roundLabel: string
@@ -30,6 +31,8 @@ export function ThreeLiesVotingPanel({
   const isAuthor = currentUserId === truthSet.author_user_id
   const isSaving = busyAction?.startsWith('vote-truth-set-') ?? false
   const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
+  const authorName = author?.nickname?.trim() ? author.nickname : 'Jogador da rodada'
+  const authorInitials = authorName.slice(0, 2).toUpperCase()
 
   return (
     <article className="panel three-lies-panel">
@@ -46,7 +49,7 @@ export function ThreeLiesVotingPanel({
         </p>
       </div>
 
-      <div className="three-lies-voting-overview">
+      <div className="three-lies-voting-summary-grid">
         <div className={`three-lies-timer-card${isUrgent ? ' urgent' : ''}`}>
           <span>Tempo restante</span>
           <strong>{phaseEndsIn}</strong>
@@ -57,16 +60,27 @@ export function ThreeLiesVotingPanel({
             {submittedVotes}/{eligibleVoters}
           </strong>
         </div>
-      </div>
 
-      <div className={`three-lies-author-card${isAuthor ? ' current-author' : ''}`}>
-        <span>Autor em destaque</span>
-        <strong>{author?.nickname ?? 'Jogador da rodada'}</strong>
-        <p>
-          {isAuthor
-            ? 'Voce e o autor dessa historia, aguarde a votacao dos outros jogadores.'
-            : 'Seu voto fica oculto ate a sala entrar em reveal.'}
-        </p>
+        <div className={`three-lies-author-card${isAuthor ? ' current-author' : ''}`}>
+          <div className="three-lies-author-card-layout">
+            <div className="three-lies-author-avatar">
+              {author?.avatar_url ? (
+                <img src={normalizeAvatarUrl(author.avatar_url)} alt={authorName} />
+              ) : (
+                <span>{authorInitials}</span>
+              )}
+            </div>
+            <div className="three-lies-author-copy">
+              <span>Autor em destaque</span>
+              <strong>{authorName}</strong>
+              <p>
+                {isAuthor
+                  ? 'Voce e o autor dessa historia, aguarde a votacao dos outros jogadores.'
+                  : 'Seu voto fica oculto ate a sala entrar em reveal.'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="three-lies-statement-grid voting">

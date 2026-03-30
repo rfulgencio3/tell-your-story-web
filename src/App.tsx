@@ -284,6 +284,14 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const lastAlarmPhaseKeyRef = useRef<string | null>(null)
+  const previousThreeLiesPhaseRef = useRef<{
+    roundId: string
+    status: string
+    submittedTruthSets: number
+    eligibleAuthors: number
+    submittedVotes: number
+    eligibleVoters: number
+  } | null>(null)
 
   const { activityFeed, pushActivity } = useActivityFeed()
   const currentRound = roomState?.current_round ?? null
@@ -533,6 +541,53 @@ export default function App() {
     lastAlarmPhaseKeyRef.current = phaseKey
     playAlarmTone()
   }, [currentRound?.id, currentRound?.status, isThreeLiesRoom, phaseSecondsLeft])
+
+  useEffect(() => {
+    if (!isThreeLiesRoom || !currentRound) {
+      previousThreeLiesPhaseRef.current = null
+      return
+    }
+
+    const currentSnapshot = {
+      roundId: currentRound.id,
+      status: currentRound.status,
+      submittedTruthSets: roomState?.three_lies?.writing_progress?.submitted_truth_sets ?? 0,
+      eligibleAuthors: roomState?.three_lies?.writing_progress?.eligible_authors ?? 0,
+      submittedVotes: roomState?.three_lies?.voting_progress?.submitted_votes ?? 0,
+      eligibleVoters: roomState?.three_lies?.voting_progress?.eligible_voters ?? 0,
+    }
+
+    const previousSnapshot = previousThreeLiesPhaseRef.current
+    if (previousSnapshot && previousSnapshot.roundId === currentSnapshot.roundId) {
+      if (
+        previousSnapshot.status === 'writing' &&
+        currentSnapshot.status === 'presentation_voting' &&
+        previousSnapshot.eligibleAuthors > 0 &&
+        previousSnapshot.submittedTruthSets >= previousSnapshot.eligibleAuthors
+      ) {
+        setNotice('Todos os jogadores ja enviaram as afirmacoes. A rodada avancou para a apresentacao.')
+      }
+
+      if (
+        previousSnapshot.status === 'presentation_voting' &&
+        currentSnapshot.status === 'reveal' &&
+        previousSnapshot.eligibleVoters > 0 &&
+        previousSnapshot.submittedVotes >= previousSnapshot.eligibleVoters
+      ) {
+        setNotice('Todos os votos ja foram enviados. A rodada avancou para a revelacao.')
+      }
+    }
+
+    previousThreeLiesPhaseRef.current = currentSnapshot
+  }, [
+    currentRound?.id,
+    currentRound?.status,
+    isThreeLiesRoom,
+    roomState?.three_lies?.voting_progress?.eligible_voters,
+    roomState?.three_lies?.voting_progress?.submitted_votes,
+    roomState?.three_lies?.writing_progress?.eligible_authors,
+    roomState?.three_lies?.writing_progress?.submitted_truth_sets,
+  ])
 
   function resetFeedback() {
     setErrorMessage(null)
