@@ -15,6 +15,7 @@ const maxReconnectAttempts = 10
 interface UseRealtimeParams {
   session: SessionState | null
   onRoomState: (state: RoomState) => void
+  onRoomInvalidated: () => void
   onStoryProgress: (payload: ProgressPayload) => void
   onVoteProgress: (payload: ProgressPayload) => void
   onTopStory: (payload: TopStoryResult) => void
@@ -25,6 +26,7 @@ interface UseRealtimeParams {
 export function useRealtime({
   session,
   onRoomState,
+  onRoomInvalidated,
   onStoryProgress,
   onVoteProgress,
   onTopStory,
@@ -48,6 +50,18 @@ export function useRealtime({
       case 'vote.progress':
         onVoteProgress(event.data as ProgressPayload)
         break
+      case 'truth_set.vote.progress':
+        onRoomInvalidated()
+        break
+      case 'room.phase.changed':
+        onRoomInvalidated()
+        break
+      case 'truth_set.presented':
+      case 'truth_set.revealed':
+      case 'truth_set.commentary.started':
+      case 'room.final_ranking.ready':
+        onRoomInvalidated()
+        break
       case 'round.revealed':
         onTopStory(event.data as TopStoryResult)
         onActivity('A historia vencedora foi revelada.')
@@ -55,11 +69,13 @@ export function useRealtime({
       case 'presence.joined': {
         const payload = event.data as { nickname?: string }
         onActivity(`${payload.nickname ?? 'Alguem'} entrou na sala.`)
+        onRoomInvalidated()
         break
       }
       case 'presence.left': {
         const payload = event.data as { nickname?: string }
         onActivity(`${payload.nickname ?? 'Alguem'} saiu da sala.`)
+        onRoomInvalidated()
         break
       }
       case 'connection.ready':

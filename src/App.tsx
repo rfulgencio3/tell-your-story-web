@@ -332,6 +332,19 @@ export default function App() {
     onRoomState: (state) => {
       setRoomState(state)
     },
+    onRoomInvalidated: () => {
+      if (!session) {
+        return
+      }
+
+      void getRoom(session.roomCode)
+        .then((state) => {
+          setRoomState(state)
+        })
+        .catch(() => {
+          // Ignore transient sync failures; realtime can retry on the next event.
+        })
+    },
     onStoryProgress: (payload) => {
       setStoryProgress(payload)
     },
