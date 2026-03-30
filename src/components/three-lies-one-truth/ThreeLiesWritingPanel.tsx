@@ -12,6 +12,8 @@ interface ThreeLiesWritingPanelProps {
   truthSetForm: TruthSetFormState
   busyAction: string | null
   hasSubmittedTruthSet: boolean
+  submittedTruthSets: number
+  eligibleAuthors: number
   onStatementChange: (index: number, value: string) => void
   onTrueStatementChange: (index: number) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -24,6 +26,8 @@ export function ThreeLiesWritingPanel({
   truthSetForm,
   busyAction,
   hasSubmittedTruthSet,
+  submittedTruthSets,
+  eligibleAuthors,
   onStatementChange,
   onTrueStatementChange,
   onSubmit,
@@ -47,6 +51,14 @@ export function ThreeLiesWritingPanel({
       <div className={`three-lies-timer-card subtle${isUrgent ? ' urgent' : ''}`}>
         <span>Tempo restante</span>
         <strong>{phaseEndsIn}</strong>
+      </div>
+
+      <div className="three-lies-progress-card three-lies-writing-progress-card">
+        <span>Progresso da rodada</span>
+        <strong>
+          {submittedTruthSets}/{eligibleAuthors}
+        </strong>
+        <p>jogadores ja enviaram as afirmacoes desta rodada.</p>
       </div>
 
       <form className="three-lies-writing-form" onSubmit={onSubmit}>

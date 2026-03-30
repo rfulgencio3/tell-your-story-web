@@ -106,7 +106,7 @@ function buildRoomState(overrides?: Partial<RoomState>): RoomState {
       host_id: 'user-1',
       game_type: 'tell-your-story',
       max_rounds: 3,
-      time_per_round: 120,
+      time_per_round: 60,
       status: 'waiting',
       created_at: '2026-03-27T10:00:00Z',
       expires_at: '2026-03-27T12:00:00Z',
@@ -222,7 +222,7 @@ describe('App', () => {
         host_avatar_url: defaultAvatarUrl,
         game_type: 'tell-your-story',
         max_rounds: 3,
-        time_per_round: 120,
+        time_per_round: 60,
       })
     })
 
@@ -260,7 +260,7 @@ describe('App', () => {
         host_avatar_url: defaultAvatarUrl,
         game_type: 'three-lies-one-truth',
         max_rounds: 3,
-        time_per_round: 120,
+        time_per_round: 60,
       })
     })
   })
@@ -434,6 +434,12 @@ describe('App', () => {
           paused_at: null,
           completed_at: null,
         },
+        three_lies: {
+          writing_progress: {
+            eligible_authors: 2,
+            submitted_truth_sets: 0,
+          },
+        },
       }),
     )
     submitTruthSetMock.mockResolvedValue({
@@ -456,6 +462,8 @@ describe('App', () => {
     render(<App />)
 
     expect(await screen.findByText('Escreva 4 afirmacoes e esconda a verdade.')).toBeInTheDocument()
+    expect(screen.getByText('Progresso da rodada')).toBeInTheDocument()
+    expect(screen.getByText('0/2')).toBeInTheDocument()
 
     fireEvent.change(screen.getByPlaceholderText('Escreva a afirmacao 1'), { target: { value: 'A' } })
     fireEvent.change(screen.getByPlaceholderText('Escreva a afirmacao 2'), { target: { value: 'B' } })
@@ -593,5 +601,69 @@ describe('App', () => {
 
     expect(await screen.findByText('Voce e o autor dessa historia, aguarde a votacao dos outros jogadores.')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Bloqueado para o autor' })[0]).toBeDisabled()
+  })
+
+  it('permite ao host avancar manualmente na commentary do three-lies-one-truth', async () => {
+    loadSessionMock.mockReturnValue(buildSession())
+    getRoomMock.mockResolvedValue(
+      buildRoomState({
+        room: {
+          ...buildRoomState().room,
+          game_type: 'three-lies-one-truth',
+          status: 'active',
+        },
+        current_round: {
+          id: 'round-1',
+          room_id: 'room-1',
+          round_number: 1,
+          status: 'commentary',
+          active_truth_set_id: 'truth-set-1',
+          started_at: '2026-03-27T10:00:00Z',
+          phase_ends_at: '2026-03-27T10:03:00Z',
+          paused_at: null,
+          completed_at: null,
+        },
+        three_lies: {
+          reveal: {
+            truth_set: {
+              id: 'truth-set-1',
+              room_id: 'room-1',
+              round_id: 'round-1',
+              author_user_id: 'user-2',
+              presentation_order: 1,
+              true_statement_index: 2,
+              created_at: '2026-03-27T10:00:30Z',
+              updated_at: '2026-03-27T10:00:30Z',
+              statements: [
+                { id: 'ts-1', truth_set_id: 'truth-set-1', statement_index: 1, content: 'A', created_at: '', updated_at: '' },
+                { id: 'ts-2', truth_set_id: 'truth-set-1', statement_index: 2, content: 'B', created_at: '', updated_at: '' },
+                { id: 'ts-3', truth_set_id: 'truth-set-1', statement_index: 3, content: 'C', created_at: '', updated_at: '' },
+                { id: 'ts-4', truth_set_id: 'truth-set-1', statement_index: 4, content: 'D', created_at: '', updated_at: '' },
+              ],
+            },
+            true_statement_index: 2,
+            revealed_votes: [],
+          },
+        },
+      }),
+    )
+    nextRoundMock.mockResolvedValue(
+      buildRoomState({
+        room: {
+          ...buildRoomState().room,
+          game_type: 'three-lies-one-truth',
+          status: 'active',
+        },
+      }),
+    )
+
+    render(<App />)
+
+    expect(await screen.findByText('O autor tem ate 1 minuto para comentar.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Ir para a proxima historia' }))
+
+    await waitFor(() => {
+      expect(nextRoundMock).toHaveBeenCalled()
+    })
   })
 })

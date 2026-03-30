@@ -104,7 +104,9 @@ export function RoomPanel({
                   : roundStatus === 'reveal'
                     ? 'A resposta correta esta sendo exibida antes da janela de comentario.'
                     : roundStatus === 'commentary'
-                      ? 'O comentario do autor esta em andamento e a sala segue automaticamente.'
+                      ? isHost
+                        ? 'O comentario do autor pode durar ate 1 minuto. Voce pode avancar para a proxima historia assim que o grupo estiver pronto.'
+                        : 'O comentario do autor pode durar ate 1 minuto. O host pode avancar antes para a proxima historia.'
                   : 'A sala esta sincronizada e pronta para continuar.'
 
   return (

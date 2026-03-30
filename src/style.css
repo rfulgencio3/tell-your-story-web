@@ -1581,6 +1581,15 @@ button.ghost {
   letter-spacing: -0.05em;
 }
 
+.three-lies-progress-card p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.three-lies-writing-progress-card {
+  margin-top: 18px;
+}
+
 .three-lies-author-card,
 .three-lies-commentary-callout,
 .three-lies-reveal-highlight {
@@ -1621,6 +1630,16 @@ button.ghost {
 .three-lies-reveal-highlight p {
   margin: 8px 0 0;
   color: var(--muted);
+}
+
+.three-lies-commentary-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.three-lies-commentary-actions button {
+  min-width: min(100%, 280px);
 }
 
 .three-lies-writing-form {

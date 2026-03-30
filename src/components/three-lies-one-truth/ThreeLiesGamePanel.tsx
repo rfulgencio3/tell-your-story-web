@@ -17,6 +17,7 @@ interface TruthSetFormState {
 interface ThreeLiesGamePanelProps {
   roomState: RoomState
   currentUserId?: string
+  isHost: boolean
   currentRoundLabel: string
   phaseEndsIn: string
   phaseSecondsLeft: number | null
@@ -28,11 +29,13 @@ interface ThreeLiesGamePanelProps {
   onTrueStatementChange: (index: number) => void
   onSubmitTruthSet: (event: FormEvent<HTMLFormElement>) => void
   onVote: (statementIndex: number) => void
+  onAdvanceCommentary: () => void
 }
 
 export function ThreeLiesGamePanel({
   roomState,
   currentUserId,
+  isHost,
   currentRoundLabel,
   phaseEndsIn,
   phaseSecondsLeft,
@@ -44,9 +47,11 @@ export function ThreeLiesGamePanel({
   onTrueStatementChange,
   onSubmitTruthSet,
   onVote,
+  onAdvanceCommentary,
 }: ThreeLiesGamePanelProps) {
   const currentRound = roomState.current_round ?? null
   const activeTruthSet = roomState.three_lies?.active_truth_set ?? null
+  const writingProgress = roomState.three_lies?.writing_progress ?? null
   const reveal = roomState.three_lies?.reveal ?? null
   const finalRanking = roomState.three_lies?.final_ranking ?? null
   const votingProgress = roomState.three_lies?.voting_progress ?? null
@@ -79,6 +84,8 @@ export function ThreeLiesGamePanel({
         truthSetForm={truthSetForm}
         busyAction={busyAction}
         hasSubmittedTruthSet={hasSubmittedTruthSet}
+        submittedTruthSets={writingProgress?.submitted_truth_sets ?? 0}
+        eligibleAuthors={writingProgress?.eligible_authors ?? roomState.users.length}
         onStatementChange={onStatementChange}
         onTrueStatementChange={onTrueStatementChange}
         onSubmit={onSubmitTruthSet}
@@ -125,6 +132,9 @@ export function ThreeLiesGamePanel({
         phaseSecondsLeft={phaseSecondsLeft}
         reveal={reveal}
         author={author}
+        isHost={isHost}
+        busyAction={busyAction}
+        onAdvance={onAdvanceCommentary}
       />
     )
   }

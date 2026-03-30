@@ -43,7 +43,7 @@ const initialCreateForm: CreateFormState = {
   hostAvatarUrl: defaultAvatarUrl,
   gameType: 'tell-your-story',
   maxRounds: 3,
-  timePerRound: 120,
+  timePerRound: 60,
 }
 
 const initialJoinForm: JoinFormState = {
@@ -184,7 +184,7 @@ function getHeroCopy(roomState: RoomState | null) {
       return {
         label: 'Writing',
         title: 'Escreva 4 afirmacoes e esconda a verdade.',
-        description: 'Todo mundo prepara o proprio conjunto antes da sala seguir automaticamente para a apresentacao.',
+        description: 'Todo mundo prepara o proprio conjunto em 1 minuto e a rodada segue com quem enviou antes do tempo acabar.',
       }
     }
 
@@ -207,8 +207,8 @@ function getHeroCopy(roomState: RoomState | null) {
     if (roundStatus === 'commentary') {
       return {
         label: 'Commentary',
-        title: 'O autor tem alguns segundos para comentar.',
-        description: 'A janela de comentario fecha sozinha e a sala segue para a proxima apresentacao ou rodada.',
+        title: 'O autor tem ate 1 minuto para comentar.',
+        description: 'O host pode avancar para a proxima historia antes do timeout quando o grupo ja estiver pronto.',
       }
     }
 
@@ -1001,6 +1001,7 @@ export default function App() {
               <ThreeLiesGamePanel
                 roomState={roomState}
                 currentUserId={session?.user_id}
+                isHost={isHost}
                 currentRoundLabel={currentRoundLabel}
                 phaseEndsIn={phaseEndsIn}
                 phaseSecondsLeft={phaseSecondsLeft}
@@ -1021,6 +1022,7 @@ export default function App() {
                 }}
                 onSubmitTruthSet={onSubmitTruthSet}
                 onVote={(statementIndex) => void onTruthSetVote(statementIndex)}
+                onAdvanceCommentary={() => void runRoomAction('advance')}
               />
             ) : roomState?.room.status === 'waiting' || !currentRound ? (
               <ParticipantsPanel users={roomState?.users ?? []} currentUserId={session?.user_id} />

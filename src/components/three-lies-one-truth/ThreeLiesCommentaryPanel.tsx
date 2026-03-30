@@ -6,6 +6,9 @@ interface ThreeLiesCommentaryPanelProps {
   phaseSecondsLeft: number | null
   reveal: ThreeLiesRevealState
   author: User | null
+  isHost: boolean
+  busyAction: string | null
+  onAdvance: () => void
 }
 
 export function ThreeLiesCommentaryPanel({
@@ -14,8 +17,12 @@ export function ThreeLiesCommentaryPanel({
   phaseSecondsLeft,
   reveal,
   author,
+  isHost,
+  busyAction,
+  onAdvance,
 }: ThreeLiesCommentaryPanelProps) {
   const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
+  const isAdvancing = busyAction === 'advance'
 
   return (
     <article className="panel three-lies-panel three-lies-commentary-panel">
@@ -28,7 +35,7 @@ export function ThreeLiesCommentaryPanel({
         <p className="eyebrow">Janela do autor</p>
         <h2>{author ? `${author.nickname} tem a palavra.` : 'O autor da rodada tem a palavra.'}</h2>
         <p>
-          Este bloco fica aberto por 15 segundos para o autor comentar a historia real antes da proxima apresentacao.
+          O comentario pode durar ate 1 minuto. O host pode avancar antes para a proxima historia quando o grupo estiver pronto.
         </p>
       </div>
 
@@ -44,6 +51,14 @@ export function ThreeLiesCommentaryPanel({
           {reveal.truth_set.statements.find((statement) => statement.statement_index === reveal.true_statement_index)?.content}
         </p>
       </section>
+
+      {isHost ? (
+        <div className="three-lies-commentary-actions">
+          <button type="button" className="secondary flow-action" onClick={onAdvance} disabled={isAdvancing}>
+            {isAdvancing ? 'Avancando...' : 'Ir para a proxima historia'}
+          </button>
+        </div>
+      ) : null}
     </article>
   )
 }

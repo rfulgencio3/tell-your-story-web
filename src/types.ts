@@ -81,6 +81,11 @@ export interface ThreeLiesVotingProgress {
   submitted_votes: number
 }
 
+export interface ThreeLiesWritingProgress {
+  eligible_authors: number
+  submitted_truth_sets: number
+}
+
 export interface ThreeLiesRevealedVote {
   user_id: string
   selected_statement_index: number
@@ -114,6 +119,7 @@ export interface ThreeLiesRankingEntry {
 
 export interface ThreeLiesState {
   active_truth_set?: PresentedTruthSet | null
+  writing_progress?: ThreeLiesWritingProgress | null
   voting_progress?: ThreeLiesVotingProgress | null
   reveal?: ThreeLiesRevealState | null
   final_ranking?: ThreeLiesRankingEntry[] | null
