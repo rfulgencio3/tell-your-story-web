@@ -502,7 +502,6 @@ describe('App', () => {
             round_id: 'round-1',
             author_user_id: 'user-2',
             presentation_order: 1,
-            true_statement_index: 3,
             created_at: '2026-03-27T10:00:30Z',
             updated_at: '2026-03-27T10:00:30Z',
             statements: [
@@ -573,7 +572,6 @@ describe('App', () => {
             round_id: 'round-1',
             author_user_id: 'user-1',
             presentation_order: 1,
-            true_statement_index: 3,
             created_at: '2026-03-27T10:00:30Z',
             updated_at: '2026-03-27T10:00:30Z',
             statements: [

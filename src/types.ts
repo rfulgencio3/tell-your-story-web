@@ -65,6 +65,17 @@ export interface TruthSet {
   statements: TruthSetStatement[]
 }
 
+export interface PresentedTruthSet {
+  id: string
+  room_id: string
+  round_id: string
+  author_user_id: string
+  presentation_order: number
+  created_at: string
+  updated_at: string
+  statements: TruthSetStatement[]
+}
+
 export interface ThreeLiesVotingProgress {
   eligible_voters: number
   submitted_votes: number
@@ -102,7 +113,7 @@ export interface ThreeLiesRankingEntry {
 }
 
 export interface ThreeLiesState {
-  active_truth_set?: TruthSet | null
+  active_truth_set?: PresentedTruthSet | null
   voting_progress?: ThreeLiesVotingProgress | null
   reveal?: ThreeLiesRevealState | null
   final_ranking?: ThreeLiesRankingEntry[] | null

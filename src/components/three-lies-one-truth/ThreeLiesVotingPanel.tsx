@@ -1,10 +1,10 @@
-import type { TruthSet, User } from '../../types'
+import type { PresentedTruthSet, User } from '../../types'
 
 interface ThreeLiesVotingPanelProps {
   roundLabel: string
   phaseEndsIn: string
   phaseSecondsLeft: number | null
-  truthSet: TruthSet
+  truthSet: PresentedTruthSet
   author: User | null
   currentUserId?: string
   selectedStatementIndex: number | null
