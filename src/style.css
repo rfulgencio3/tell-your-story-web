@@ -19,6 +19,7 @@
   --line: #7b8697;
   --mint: #10b981;
   --danger: #b41340;
+  --game-topbar-offset: 86px;
 }
 
 * {
@@ -805,7 +806,7 @@ img {
 .game-sidebar {
   position: fixed;
   left: 0;
-  top: 62px;
+  top: var(--game-topbar-offset);
   bottom: 0;
   width: 250px;
   z-index: 20;
