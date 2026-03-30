@@ -202,6 +202,11 @@ img {
   align-items: start;
 }
 
+.entry-rules-stack {
+  display: grid;
+  gap: 18px;
+}
+
 .showcase-card {
   position: relative;
   border-radius: 28px;

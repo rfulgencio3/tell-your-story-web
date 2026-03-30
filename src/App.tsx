@@ -62,6 +62,34 @@ const initialTruthSetForm = {
   trueStatementIndex: null as number | null,
 }
 
+function TellYourStoryRulesPanel() {
+  return (
+    <aside className="rules-panel">
+      <div className="panel-header">
+        <span>TELL YOUR STORY</span>
+        <strong>Como funciona</strong>
+      </div>
+      <div className="rules-list">
+        <article className="rule-card">
+          <span>01</span>
+          <strong>Todo mundo entra na mesma sala.</strong>
+          <p>O host cria a sala e compartilha o codigo com o grupo.</p>
+        </article>
+        <article className="rule-card">
+          <span>02</span>
+          <strong>Cada rodada tem escrita, voto e revelacao.</strong>
+          <p>Voce escreve sua historia, vota na favorita e espera o resultado.</p>
+        </article>
+        <article className="rule-card">
+          <span>03</span>
+          <strong>Ganha a historia que conquistar mais votos.</strong>
+          <p>O host avanca as fases e pode iniciar a proxima rodada quando quiser.</p>
+        </article>
+      </div>
+    </aside>
+  )
+}
+
 function formatRoundLabel(roundState: RoomState | null) {
   const currentRound = roundState?.current_round
   if (!currentRound) {
@@ -835,32 +863,15 @@ export default function App() {
                 }}
               />
 
-              {entryMode === 'create' && createForm.gameType === 'three-lies-one-truth' ? (
-                <ThreeLiesRulesPanel title="Three Lies, One Truth" heading="Regras rapidas" />
+              {entryMode === 'join' ? (
+                <div className="entry-rules-stack">
+                  <TellYourStoryRulesPanel />
+                  <ThreeLiesRulesPanel title="THREE LIES, ONE TRUTH" heading="Como funciona" />
+                </div>
+              ) : createForm.gameType === 'three-lies-one-truth' ? (
+                <ThreeLiesRulesPanel title="THREE LIES, ONE TRUTH" heading="Como funciona" />
               ) : (
-                <aside className="rules-panel">
-                  <div className="panel-header">
-                    <span>Regras rapidas</span>
-                    <strong>Como funciona</strong>
-                  </div>
-                  <div className="rules-list">
-                    <article className="rule-card">
-                      <span>01</span>
-                      <strong>Todo mundo entra na mesma sala.</strong>
-                      <p>O host cria a sala e compartilha o codigo com o grupo.</p>
-                    </article>
-                    <article className="rule-card">
-                      <span>02</span>
-                      <strong>Cada rodada tem escrita, voto e revelacao.</strong>
-                      <p>Voce escreve sua historia, vota na favorita e espera o resultado.</p>
-                    </article>
-                    <article className="rule-card">
-                      <span>03</span>
-                      <strong>Ganha a historia que conquistar mais votos.</strong>
-                      <p>O host avanca as fases e pode iniciar a proxima rodada quando quiser.</p>
-                    </article>
-                  </div>
-                </aside>
+                <TellYourStoryRulesPanel />
               )}
             </div>
           </section>
