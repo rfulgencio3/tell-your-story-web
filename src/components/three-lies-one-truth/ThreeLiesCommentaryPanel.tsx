@@ -3,6 +3,7 @@ import type { ThreeLiesRevealState, User } from '../../types'
 interface ThreeLiesCommentaryPanelProps {
   roundLabel: string
   phaseEndsIn: string
+  phaseSecondsLeft: number | null
   reveal: ThreeLiesRevealState
   author: User | null
 }
@@ -10,9 +11,12 @@ interface ThreeLiesCommentaryPanelProps {
 export function ThreeLiesCommentaryPanel({
   roundLabel,
   phaseEndsIn,
+  phaseSecondsLeft,
   reveal,
   author,
 }: ThreeLiesCommentaryPanelProps) {
+  const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
+
   return (
     <article className="panel three-lies-panel three-lies-commentary-panel">
       <div className="panel-header">
@@ -28,7 +32,7 @@ export function ThreeLiesCommentaryPanel({
         </p>
       </div>
 
-      <div className="three-lies-timer-card">
+      <div className={`three-lies-timer-card subtle${isUrgent ? ' urgent' : ''}`}>
         <span>Comentario termina em</span>
         <strong>{phaseEndsIn}</strong>
       </div>

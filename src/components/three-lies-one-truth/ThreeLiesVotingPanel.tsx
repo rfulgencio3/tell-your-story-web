@@ -3,6 +3,7 @@ import type { TruthSet, User } from '../../types'
 interface ThreeLiesVotingPanelProps {
   roundLabel: string
   phaseEndsIn: string
+  phaseSecondsLeft: number | null
   truthSet: TruthSet
   author: User | null
   currentUserId?: string
@@ -16,6 +17,7 @@ interface ThreeLiesVotingPanelProps {
 export function ThreeLiesVotingPanel({
   roundLabel,
   phaseEndsIn,
+  phaseSecondsLeft,
   truthSet,
   author,
   currentUserId,
@@ -27,6 +29,7 @@ export function ThreeLiesVotingPanel({
 }: ThreeLiesVotingPanelProps) {
   const isAuthor = currentUserId === truthSet.author_user_id
   const isSaving = busyAction?.startsWith('vote-truth-set-') ?? false
+  const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
 
   return (
     <article className="panel three-lies-panel">
@@ -44,7 +47,7 @@ export function ThreeLiesVotingPanel({
       </div>
 
       <div className="three-lies-voting-overview">
-        <div className="three-lies-timer-card">
+        <div className={`three-lies-timer-card${isUrgent ? ' urgent' : ''}`}>
           <span>Tempo restante</span>
           <strong>{phaseEndsIn}</strong>
         </div>

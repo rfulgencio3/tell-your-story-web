@@ -8,6 +8,7 @@ interface TruthSetFormState {
 interface ThreeLiesWritingPanelProps {
   roundLabel: string
   phaseEndsIn: string
+  phaseSecondsLeft: number | null
   truthSetForm: TruthSetFormState
   busyAction: string | null
   hasSubmittedTruthSet: boolean
@@ -19,6 +20,7 @@ interface ThreeLiesWritingPanelProps {
 export function ThreeLiesWritingPanel({
   roundLabel,
   phaseEndsIn,
+  phaseSecondsLeft,
   truthSetForm,
   busyAction,
   hasSubmittedTruthSet,
@@ -27,6 +29,7 @@ export function ThreeLiesWritingPanel({
   onSubmit,
 }: ThreeLiesWritingPanelProps) {
   const isSaving = busyAction === 'submit-truth-set'
+  const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
 
   return (
     <article className="panel three-lies-panel three-lies-writing-panel">
@@ -41,7 +44,7 @@ export function ThreeLiesWritingPanel({
         <p>O grupo vai ver seu nome junto com as afirmacoes e tentar acertar a unica verdade.</p>
       </div>
 
-      <div className="three-lies-timer-card subtle">
+      <div className={`three-lies-timer-card subtle${isUrgent ? ' urgent' : ''}`}>
         <span>Tempo restante</span>
         <strong>{phaseEndsIn}</strong>
       </div>

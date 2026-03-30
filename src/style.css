@@ -1470,6 +1470,18 @@ button.ghost {
   box-shadow: none;
 }
 
+.three-lies-timer-card.urgent {
+  border-color: rgba(180, 19, 64, 0.34);
+  background: linear-gradient(135deg, rgba(180, 19, 64, 0.14), rgba(255, 248, 251, 0.98));
+  box-shadow: 0 0 0 4px rgba(180, 19, 64, 0.12);
+  animation: timerPulse 0.85s ease-in-out infinite alternate;
+}
+
+.three-lies-timer-card.urgent strong,
+.three-lies-timer-card.urgent span {
+  color: var(--danger);
+}
+
 .three-lies-timer-card span {
   display: block;
   color: #6f7a8d;
@@ -1954,5 +1966,15 @@ button.ghost {
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes timerPulse {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-1px) scale(1.01);
   }
 }

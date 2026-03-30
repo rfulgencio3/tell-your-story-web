@@ -3,16 +3,22 @@ import type { ThreeLiesRevealState, User } from '../../types'
 interface ThreeLiesRevealPanelProps {
   roundLabel: string
   phaseEndsIn: string
+  phaseSecondsLeft: number | null
   reveal: ThreeLiesRevealState
   author: User | null
+  users: User[]
 }
 
 export function ThreeLiesRevealPanel({
   roundLabel,
   phaseEndsIn,
+  phaseSecondsLeft,
   reveal,
   author,
+  users,
 }: ThreeLiesRevealPanelProps) {
+  const isUrgent = phaseSecondsLeft !== null && phaseSecondsLeft > 0 && phaseSecondsLeft <= 10
+
   return (
     <article className="panel three-lies-panel three-lies-reveal-panel">
       <div className="panel-header">
@@ -26,7 +32,7 @@ export function ThreeLiesRevealPanel({
         <p>Agora o grupo ja consegue ver quem votou em cada opcao antes da janela de comentario comecar.</p>
       </div>
 
-      <div className="three-lies-timer-card subtle">
+      <div className={`three-lies-timer-card subtle${isUrgent ? ' urgent' : ''}`}>
         <span>Reveal termina em</span>
         <strong>{phaseEndsIn}</strong>
       </div>
@@ -42,7 +48,7 @@ export function ThreeLiesRevealPanel({
       <div className="three-lies-reveal-votes">
         {reveal.revealed_votes.map((vote) => (
           <article key={vote.user_id} className={`three-lies-reveal-vote${vote.is_correct ? ' correct' : ' wrong'}`}>
-            <span>{vote.user_id}</span>
+            <span>{users.find((user) => user.id === vote.user_id)?.nickname ?? vote.user_id}</span>
             <strong>Opcao {vote.selected_statement_index}</strong>
             <p>{vote.is_correct ? 'Acertou a verdade.' : 'Caiu em uma mentira.'}</p>
           </article>

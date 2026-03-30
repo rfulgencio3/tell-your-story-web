@@ -19,6 +19,7 @@ interface ThreeLiesGamePanelProps {
   currentUserId?: string
   currentRoundLabel: string
   phaseEndsIn: string
+  phaseSecondsLeft: number | null
   truthSetForm: TruthSetFormState
   busyAction: string | null
   hasSubmittedTruthSet: boolean
@@ -34,6 +35,7 @@ export function ThreeLiesGamePanel({
   currentUserId,
   currentRoundLabel,
   phaseEndsIn,
+  phaseSecondsLeft,
   truthSetForm,
   busyAction,
   hasSubmittedTruthSet,
@@ -73,6 +75,7 @@ export function ThreeLiesGamePanel({
       <ThreeLiesWritingPanel
         roundLabel={currentRoundLabel}
         phaseEndsIn={phaseEndsIn}
+        phaseSecondsLeft={phaseSecondsLeft}
         truthSetForm={truthSetForm}
         busyAction={busyAction}
         hasSubmittedTruthSet={hasSubmittedTruthSet}
@@ -88,6 +91,7 @@ export function ThreeLiesGamePanel({
       <ThreeLiesVotingPanel
         roundLabel={currentRoundLabel}
         phaseEndsIn={phaseEndsIn}
+        phaseSecondsLeft={phaseSecondsLeft}
         truthSet={activeTruthSet}
         author={author}
         currentUserId={currentUserId}
@@ -105,8 +109,10 @@ export function ThreeLiesGamePanel({
       <ThreeLiesRevealPanel
         roundLabel={currentRoundLabel}
         phaseEndsIn={phaseEndsIn}
+        phaseSecondsLeft={phaseSecondsLeft}
         reveal={reveal}
         author={author}
+        users={roomState.users}
       />
     )
   }
@@ -116,6 +122,7 @@ export function ThreeLiesGamePanel({
       <ThreeLiesCommentaryPanel
         roundLabel={currentRoundLabel}
         phaseEndsIn={phaseEndsIn}
+        phaseSecondsLeft={phaseSecondsLeft}
         reveal={reveal}
         author={author}
       />

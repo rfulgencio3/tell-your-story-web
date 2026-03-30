@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useEffectEvent, useState } from 'react'
+import { type FormEvent, useEffect, useEffectEvent, useRef, useState } from 'react'
 import {
   ApiError,
   createRoom,
@@ -82,6 +82,44 @@ function formatRoundLabel(roundState: RoomState | null) {
               : 'Encerrada'
 
   return `Rodada ${currentRound.round_number} - ${phaseLabel}`
+}
+
+function getPhaseSecondsLeft(phaseEndsAt: string | null | undefined, now: number) {
+  if (!phaseEndsAt) {
+    return null
+  }
+
+  const diff = new Date(phaseEndsAt).getTime() - now
+  return Math.max(Math.ceil(diff / 1000), 0)
+}
+
+function playAlarmTone() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const AudioContextCtor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioContextCtor) {
+    return
+  }
+
+  try {
+    const audioContext = new AudioContextCtor()
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+    oscillator.type = 'square'
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime)
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.45)
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + 0.45)
+    void audioContext.close().catch(() => undefined)
+  } catch {
+    // Ignore browsers that block autoplay audio.
+  }
 }
 
 function getHeroCopy(roomState: RoomState | null) {
@@ -217,6 +255,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const lastAlarmPhaseKeyRef = useRef<string | null>(null)
 
   const { activityFeed, pushActivity } = useActivityFeed()
   const currentRound = roomState?.current_round ?? null
@@ -293,6 +332,7 @@ export default function App() {
   const activeTruthSetId = roomState?.three_lies?.active_truth_set?.id ?? null
   const selectedTruthSetVote = activeTruthSetId ? truthSetVoteSelections[activeTruthSetId] ?? null : null
   const hasVoted = currentRound ? userVote?.round_id === currentRound.id : false
+  const phaseSecondsLeft = getPhaseSecondsLeft(currentRound?.phase_ends_at, now)
   const phaseEndsIn = currentRound?.phase_ends_at
     ? formatTimeRemaining(currentRound.phase_ends_at, now)
     : 'Sem cronometro'
@@ -430,6 +470,28 @@ export default function App() {
       setRoomState(null)
     }
   }, [roomState?.room.status])
+
+  useEffect(() => {
+    if (!isThreeLiesRoom || !currentRound) {
+      lastAlarmPhaseKeyRef.current = null
+      return
+    }
+
+    const phaseKey = `${currentRound.id}:${currentRound.status}`
+    if (phaseSecondsLeft === null || phaseSecondsLeft > 0) {
+      if (lastAlarmPhaseKeyRef.current !== phaseKey) {
+        lastAlarmPhaseKeyRef.current = null
+      }
+      return
+    }
+
+    if (lastAlarmPhaseKeyRef.current === phaseKey) {
+      return
+    }
+
+    lastAlarmPhaseKeyRef.current = phaseKey
+    playAlarmTone()
+  }, [currentRound?.id, currentRound?.status, isThreeLiesRoom, phaseSecondsLeft])
 
   function resetFeedback() {
     setErrorMessage(null)
@@ -917,6 +979,7 @@ export default function App() {
                 currentUserId={session?.user_id}
                 currentRoundLabel={currentRoundLabel}
                 phaseEndsIn={phaseEndsIn}
+                phaseSecondsLeft={phaseSecondsLeft}
                 truthSetForm={truthSetForm}
                 busyAction={busyAction}
                 hasSubmittedTruthSet={hasSubmittedTruthSet}
