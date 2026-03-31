@@ -201,6 +201,7 @@ describe('App', () => {
     saveSessionMock.mockReset()
     clearSessionMock.mockReset()
     getRoomMock.mockResolvedValue(buildRoomState())
+    Reflect.deleteProperty(globalThis.navigator, 'share')
   })
 
   it('cria uma sala e mostra a sessao autenticada', async () => {
@@ -480,6 +481,30 @@ describe('App', () => {
         statements: ['A', 'B', 'C', 'D'],
         true_statement_index: 2,
       })
+    })
+  })
+
+  it('compartilha a sala atual pelo botao lateral', async () => {
+    const shareMock = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(globalThis.navigator, 'share', {
+      value: shareMock,
+      configurable: true,
+    })
+    loadSessionMock.mockReturnValue(buildSession())
+    getRoomMock.mockResolvedValue(buildRoomState())
+
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Compartilhar sala' }))
+
+    await waitFor(() => {
+      expect(shareMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Tell Your Story',
+          text: 'Entre na minha sala ABCD12.',
+          url: expect.stringContaining('room=ABCD12'),
+        }),
+      )
     })
   })
 

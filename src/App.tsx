@@ -398,14 +398,15 @@ export default function App() {
           ? 'Conectando canal realtime...'
           : null)
   const isPageBusy = busyAction !== null
-  const shareLink = createdRoomCode
+  const activeRoomCode = roomState?.room.code ?? createdRoomCode
+  const shareLink = activeRoomCode
     ? (() => {
         if (typeof window === 'undefined') {
-          return `/?room=${createdRoomCode}`
+          return `/?room=${activeRoomCode}`
         }
 
         const url = new URL(window.location.href)
-        url.searchParams.set('room', createdRoomCode)
+        url.searchParams.set('room', activeRoomCode)
         return url.toString()
       })()
     : ''
@@ -849,7 +850,7 @@ export default function App() {
   }
 
   async function copyInviteLink() {
-    if (!createdRoomCode) {
+    if (!activeRoomCode) {
       return
     }
 
@@ -864,6 +865,30 @@ export default function App() {
     } catch {
       setNotice(`Link da sala: ${shareLink}`)
     }
+  }
+
+  async function shareRoomInvite() {
+    if (!activeRoomCode) {
+      return
+    }
+
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: 'Tell Your Story',
+          text: `Entre na minha sala ${activeRoomCode}.`,
+          url: shareLink,
+        })
+        setNotice('Convite da sala compartilhado.')
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return
+        }
+      }
+    }
+
+    await copyInviteLink()
   }
 
   if (!hasLiveRoom) {
@@ -1020,7 +1045,7 @@ export default function App() {
           <button type="button">Players</button>
         </nav>
 
-        <button type="button" className="sidebar-cta" onClick={() => void copyRoomCode()}>
+        <button type="button" className="sidebar-cta" onClick={() => void shareRoomInvite()}>
           Compartilhar sala
         </button>
       </aside>
